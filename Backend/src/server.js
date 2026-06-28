@@ -27,12 +27,28 @@ let server;
 
 validateEnvironment();
 
+const configuredOrigins = [process.env.CLIENT_URL, process.env.FRONTEND_URL]
+  .filter(Boolean)
+  .flatMap((value) => value.split(","))
+  .map((value) => value.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+const allowedOrigins = new Set(["http://localhost:5173", ...configuredOrigins]);
+
 app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin(origin, callback) {
+      const normalizedOrigin = origin?.replace(/\/$/, "");
+
+      if (!origin || allowedOrigins.has(normalizedOrigin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("CORS origin is not allowed."));
+    },
     credentials: true,
   })
 );
@@ -42,6 +58,18 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+
+app.head("/", (_req, res) => {
+  res.status(200).end();
+});
+
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Nebeda Threads API is live",
+    health: "/api/health",
+  });
+});
 
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);

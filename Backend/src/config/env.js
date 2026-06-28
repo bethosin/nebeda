@@ -5,7 +5,6 @@ const requiredEnvironmentKeys = [
   "JWT_SECRET",
   "JWT_EXPIRES_IN",
   "CLIENT_URL",
-  "FRONTEND_URL",
   "CLOUDINARY_CLOUD_NAME",
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
