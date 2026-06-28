@@ -32,6 +32,8 @@ Required variables:
 - `EMAIL_FROM_NAME`
 - `EMAIL_FROM_ADDRESS`
 - `BRAND_NOTIFICATION_EMAIL`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
 - `ENABLE_MAINTENANCE_ROUTES`
 
 Use a long, random `JWT_SECRET` in production.
@@ -40,6 +42,16 @@ Frontend variables:
 
 - `VITE_API_URL`
 - `VITE_APP_NAME`
+- `VITE_STRIPE_PUBLISHABLE_KEY`
+
+## Stripe Test Checkout
+
+Use Stripe test-mode credentials in `Backend/.env`. Register
+`/api/payments/webhook` in Stripe for `checkout.session.completed`,
+`checkout.session.expired`, and `payment_intent.payment_failed`. Checkout
+amounts are resolved from MongoDB products and payment status is confirmed
+only by a verified webhook. Never expose `STRIPE_SECRET_KEY` or
+`STRIPE_WEBHOOK_SECRET` to the frontend.
 
 ## Resend Email Setup
 

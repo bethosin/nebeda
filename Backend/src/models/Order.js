@@ -29,6 +29,11 @@ const orderItemSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    currency: {
+      type: String,
+      enum: ["GBP", "EUR"],
+      default: "GBP",
+    },
     quantity: {
       type: Number,
       required: true,
@@ -123,8 +128,15 @@ const orderSchema = new mongoose.Schema(
       enum: paymentProviders,
       default: "Not Set",
     },
+    currency: {
+      type: String,
+      enum: ["GBP", "EUR"],
+      default: "GBP",
+    },
+    paidAt: { type: Date },
     stripeSessionId: { type: String, trim: true },
     paymentIntentId: { type: String, trim: true },
+    paymentFailureReason: { type: String, trim: true, maxlength: 500 },
     adminNotes: { type: String, trim: true },
     isArchived: {
       type: Boolean,
@@ -138,6 +150,8 @@ orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ "customer.email": 1 });
 orderSchema.index({ orderStatus: 1 });
 orderSchema.index({ paymentStatus: 1 });
+orderSchema.index({ stripeSessionId: 1 }, { sparse: true });
+orderSchema.index({ paymentIntentId: 1 }, { sparse: true });
 orderSchema.index({ createdAt: -1 });
 
 const Order = mongoose.model("Order", orderSchema);

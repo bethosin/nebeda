@@ -13,22 +13,6 @@ import { EMAIL_DELIVERY_WARNING, sendEmailSafely } from "../utils/sendEmail.js";
 
 const validateEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
 
-const normalizeItems = (items = []) =>
-  items.map((item) => {
-    const numericPrice = Number(item.numericPrice || 0);
-    const quantity = Math.max(Number(item.quantity || 1), 1);
-
-    return {
-      product: mongoose.Types.ObjectId.isValid(item.productId) ? item.productId : undefined,
-      name: item.name,
-      image: item.image,
-      price: item.price || `£${numericPrice}`,
-      numericPrice,
-      quantity,
-      subtotal: numericPrice * quantity,
-    };
-  });
-
 const validateOrderPayload = (payload) => {
   const requiredCustomerFields = ["fullName", "email"];
   const requiredShippingFields = ["shippingCountry", "addressLine1", "city", "country"];
@@ -45,8 +29,13 @@ const validateOrderPayload = (payload) => {
     return "Order must include at least one cart item";
   }
 
-  const invalidItem = payload.items.find((item) => !item.name || !item.numericPrice || !item.quantity);
-  if (invalidItem) return "Each order item must include name, numeric price, and quantity";
+  const invalidItem = payload.items.find(
+    (item) =>
+      !mongoose.Types.ObjectId.isValid(item.productId) ||
+      !Number.isInteger(Number(item.quantity)) ||
+      Number(item.quantity) < 1,
+  );
+  if (invalidItem) return "Each order item must include a valid product and quantity";
 
   return null;
 };
@@ -60,7 +49,7 @@ const createOrder = asyncHandler(async (req, res) => {
   const payload = {
     customer: req.body.customer,
     shipping: req.body.shipping,
-    items: normalizeItems(req.body.items),
+    items: req.body.items,
   };
   const validationError = validateOrderPayload(payload);
 
@@ -69,18 +58,60 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new Error(validationError);
   }
 
-  const subtotal = payload.items.reduce((sum, item) => sum + item.subtotal, 0);
-  const deliveryFee = Number(req.body.totals?.deliveryFee || 0);
+  const productIds = [...new Set(payload.items.map((item) => item.productId))];
+  const products = await Product.find({
+    _id: { $in: productIds },
+    isActive: true,
+  }).lean();
+  const productsById = new Map(products.map((product) => [product._id.toString(), product]));
+
+  if (products.length !== productIds.length) {
+    res.status(400);
+    throw new Error("One or more products are unavailable. Please refresh your cart.");
+  }
+
+  const items = payload.items.map((item) => {
+    const product = productsById.get(item.productId);
+    const numericPrice = Number(product.numericPrice);
+    const quantity = Number(item.quantity);
+
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      res.status(400);
+      throw new Error(`${product.name} does not have a valid checkout price.`);
+    }
+
+    return {
+      product: product._id,
+      name: product.name,
+      image: product.mainImage?.url || product.images?.[0]?.url || "",
+      price: product.price,
+      numericPrice,
+      currency: product.currency === "EUR" ? "EUR" : "GBP",
+      quantity,
+      subtotal: numericPrice * quantity,
+    };
+  });
+  const orderCurrencies = new Set(items.map((item) => item.currency));
+
+  if (orderCurrencies.size > 1) {
+    res.status(400);
+    throw new Error("Mixed GBP and EUR products cannot be checked out together.");
+  }
+
+  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+  const deliveryFee = 0;
   const order = await Order.create({
     user: req.user._id,
     customer: payload.customer,
     shipping: payload.shipping,
-    items: payload.items,
+    items,
+    currency: [...orderCurrencies][0] || "GBP",
     totals: {
       subtotal,
       deliveryFee,
       total: subtotal + deliveryFee,
     },
+    paymentProvider: "Stripe",
   });
 
   const emailResults = await Promise.all([
@@ -277,6 +308,25 @@ const updatePaymentStatus = asyncHandler(async (req, res) => {
   }
 
   const previousPaymentStatus = order.paymentStatus;
+
+  if (
+    order.paymentProvider === "Stripe" &&
+    paymentProvider &&
+    paymentProvider !== "Stripe"
+  ) {
+    res.status(403);
+    throw new Error("The payment provider cannot be changed for a Stripe order.");
+  }
+
+  if (
+    paymentStatus === "Paid" &&
+    order.paymentProvider === "Stripe" &&
+    previousPaymentStatus !== "Paid"
+  ) {
+    res.status(403);
+    throw new Error("Stripe payments can only be confirmed by the verified webhook.");
+  }
+
   order.paymentStatus = paymentStatus;
   if (paymentProvider) order.paymentProvider = paymentProvider;
   if (adminNotes !== undefined) order.adminNotes = adminNotes;
@@ -307,6 +357,15 @@ const updateAdminOrder = asyncHandler(async (req, res) => {
   const previousPaymentStatus = order.paymentStatus;
   const { orderStatus, paymentStatus, paymentProvider, adminNotes } = req.body;
 
+  if (
+    order.paymentProvider === "Stripe" &&
+    paymentProvider &&
+    paymentProvider !== "Stripe"
+  ) {
+    res.status(403);
+    throw new Error("The payment provider cannot be changed for a Stripe order.");
+  }
+
   if (orderStatus) {
     if (!orderStatuses.includes(orderStatus)) {
       res.status(400);
@@ -319,6 +378,14 @@ const updateAdminOrder = asyncHandler(async (req, res) => {
     if (!paymentStatuses.includes(paymentStatus)) {
       res.status(400);
       throw new Error(`${paymentStatus} is not a valid payment status.`);
+    }
+    if (
+      paymentStatus === "Paid" &&
+      order.paymentProvider === "Stripe" &&
+      previousPaymentStatus !== "Paid"
+    ) {
+      res.status(403);
+      throw new Error("Stripe payments can only be confirmed by the verified webhook.");
     }
     order.paymentStatus = paymentStatus;
   }

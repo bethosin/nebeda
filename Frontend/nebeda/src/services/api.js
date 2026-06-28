@@ -36,6 +36,7 @@ async function apiRequest(endpoint, options = {}) {
     endpoint.startsWith('/users') ||
     endpoint === '/orders' ||
     endpoint.startsWith('/orders/my-orders') ||
+    endpoint.startsWith('/payments') ||
     endpoint === '/custom-orders' ||
     endpoint.startsWith('/custom-orders/my-orders')
   const isAdminEndpoint = endpoint.includes('/admin') || endpoint.startsWith('/dashboard')

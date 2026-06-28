@@ -294,6 +294,7 @@ function AdminOrders() {
               <p>Provider: {selectedOrder.paymentProvider}</p>
               <p>Session: {selectedOrder.stripeSessionId || 'Not set'}</p>
               <p>Intent: {selectedOrder.paymentIntentId || 'Not set'}</p>
+              <p>Paid at: {selectedOrder.paidAt ? formatDate(selectedOrder.paidAt) : 'Not paid'}</p>
             </div>
           </div>
 

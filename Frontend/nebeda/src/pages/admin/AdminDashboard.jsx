@@ -70,6 +70,7 @@ function AdminDashboard() {
       { label: 'Total Orders', value: String(stats.totalOrders ?? 0) },
       { label: 'Pending Payments', value: String(stats.pendingPayments ?? 0) },
       { label: 'Paid Orders', value: String(stats.paidOrders ?? 0) },
+      { label: 'Total Revenue', value: `£${Number(stats.totalRevenue || 0).toFixed(2)}` },
       { label: 'Custom Orders', value: String(stats.customOrders ?? 0) },
       { label: 'Enquiries', value: String(stats.enquiries ?? 0) },
       { label: 'Newsletter Subscribers', value: String(stats.newsletterSubscribers ?? 0) },

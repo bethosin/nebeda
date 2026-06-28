@@ -9,6 +9,11 @@ const escapeHtml = (value = "") =>
     .replaceAll("'", "&#039;");
 
 const formatCurrency = (value = 0) => `£${Number(value || 0).toFixed(2)}`;
+const formatOrderCurrency = (order) =>
+  new Intl.NumberFormat(order.currency === "EUR" ? "en-IE" : "en-GB", {
+    style: "currency",
+    currency: order.currency === "EUR" ? "EUR" : "GBP",
+  }).format(Number(order.totals?.total || 0));
 
 const getFirstName = (fullName = "there") => fullName.trim().split(/\s+/)[0] || "there";
 
@@ -106,7 +111,7 @@ const orderReceivedEmail = (order) => ({
     `<p>Thank you ${escapeHtml(getFirstName(order.customer.fullName))}. Your Nebeda Threads order has been received.</p>
      <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
      <p><strong>Total:</strong> ${formatCurrency(order.totals.total)}</p>
-     <p>Payment will be completed securely when Stripe checkout is connected.</p>`
+     <p>Continue to secure Stripe Checkout to complete payment. Your order will be confirmed after payment succeeds.</p>`
   ),
 });
 
@@ -126,7 +131,26 @@ const orderNotificationEmail = (order) => ({
 const paymentConfirmationEmail = (order) => ({
   to: order.customer.email,
   subject: "Nebeda Threads Payment Confirmation",
-  ...wrapEmail("Payment Confirmation", "<p>Your payment has been confirmed.</p>"),
+  ...wrapEmail(
+    "Payment Confirmed",
+    `<p>Thank you ${escapeHtml(getFirstName(order.customer.fullName))}. Your payment has been confirmed securely.</p>
+     <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
+     <p><strong>Amount paid:</strong> ${escapeHtml(formatOrderCurrency(order))}</p>
+     <p>Your order is now confirmed and Nebeda Threads will keep you updated as it progresses.</p>`,
+  ),
+});
+
+const paidOrderNotificationEmail = (order) => ({
+  to: brandEmail(),
+  subject: "Paid Nebeda Threads Order",
+  ...wrapEmail(
+    "Order Payment Received",
+    `<p><strong>Customer:</strong> ${escapeHtml(order.customer.fullName)}</p>
+     <p><strong>Email:</strong> ${escapeHtml(order.customer.email)}</p>
+     <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
+     <p><strong>Amount paid:</strong> ${escapeHtml(formatOrderCurrency(order))}</p>
+     <p><strong>Stripe session:</strong> ${escapeHtml(order.stripeSessionId || "Not set")}</p>`,
+  ),
 });
 
 const orderStatusUpdateEmail = (order) => ({
@@ -209,6 +233,7 @@ export {
   orderPaymentStatusUpdateEmail,
   orderReceivedEmail,
   orderStatusUpdateEmail,
+  paidOrderNotificationEmail,
   paymentConfirmationEmail,
   welcomeEmail,
 };

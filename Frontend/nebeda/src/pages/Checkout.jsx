@@ -4,6 +4,7 @@ import Button from '../components/ui/Button'
 import { useCart } from '../context/cartContextValue'
 import { useToast } from '../components/ui/toastContext'
 import { createOrder } from '../services/orderService'
+import { createCheckoutSession } from '../services/paymentService'
 import { subscribeNewsletter } from '../services/newsletterService'
 import { getStoredUser, isUserAuthenticated } from '../services/userAuthService'
 import logEmailWarning from '../utils/emailDiagnostics'
@@ -127,36 +128,43 @@ function Checkout() {
           postcode: formData.postcode.trim(),
           country: formData.country.trim(),
         },
-        items: cartItems,
-        totals: {
-          subtotal,
-          deliveryFee: 0,
-          total: subtotal,
-        },
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
       }
       const data = await createOrder(payload)
 
       if (newsletterOptIn) {
-        subscribeNewsletter({
-          email: formData.email.trim(),
-          fullName: formData.fullName.trim(),
-          source: 'Checkout',
-        })
-          .then((response) => {
-            logEmailWarning(response, 'Checkout newsletter signup')
+        try {
+          const newsletterResponse = await subscribeNewsletter({
+            email: formData.email.trim(),
+            fullName: formData.fullName.trim(),
+            source: 'Checkout',
           })
-          .catch(() => {
-            showToast({
-              message: 'Order created. Newsletter signup could not be completed right now.',
-              type: 'info',
-            })
-          })
+          logEmailWarning(newsletterResponse, 'Checkout newsletter signup')
+        } catch {
+          // Newsletter failure must never block an order or payment.
+        }
       }
 
       setCreatedOrder(data.order)
       clearCart()
       showToast({ message: 'Your order has been created.', type: 'success' })
       logEmailWarning(data, 'Checkout order')
+
+      try {
+        const paymentData = await createCheckoutSession(data.order._id)
+        if (!paymentData.checkoutUrl) throw new Error('Stripe Checkout URL is unavailable.')
+        window.location.assign(paymentData.checkoutUrl)
+      } catch (paymentError) {
+        showToast({
+          message:
+            paymentError.message ||
+            'Order created, but payment could not start. Complete payment from My Orders.',
+          type: 'info',
+        })
+      }
     } catch (apiError) {
       showToast({ message: apiError.message || 'Unable to create order.', type: 'error' })
     } finally {
@@ -164,8 +172,18 @@ function Checkout() {
     }
   }
 
-  const showPaymentComingSoon = () => {
-    showToast({ message: 'Payment will be available when Stripe is connected.', type: 'info' })
+  const resumePayment = async () => {
+    if (!createdOrder?._id) return
+    setIsSubmitting(true)
+
+    try {
+      const paymentData = await createCheckoutSession(createdOrder._id)
+      if (!paymentData.checkoutUrl) throw new Error('Stripe Checkout URL is unavailable.')
+      window.location.assign(paymentData.checkoutUrl)
+    } catch (paymentError) {
+      showToast({ message: paymentError.message || 'Unable to start payment.', type: 'error' })
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -179,7 +197,7 @@ function Checkout() {
             Review Before Secure Payment
           </h1>
           <p className="mt-5 text-base leading-8 text-[var(--color-muted)]">
-            Create your order now. Stripe payment remains disabled until the payment phase is built.
+            Confirm your delivery details, create your order, and continue to secure Stripe Checkout.
           </p>
           {userLoggedIn ? (
             <p className="mt-4 rounded-2xl border border-[rgba(190,151,83,0.32)] bg-white/[0.04] px-5 py-4 text-sm text-[var(--color-muted)]">
@@ -193,14 +211,16 @@ function Checkout() {
           <div className="mt-10 rounded-[1.5rem] border border-[rgba(190,151,83,0.42)] bg-[rgba(190,151,83,0.1)] p-6 sm:p-8">
             <h2 className="font-serif text-3xl text-white">Order Created</h2>
             <p className="mt-4 text-[var(--color-muted)]">
-              Your order has been received. Nebeda Threads will confirm availability and payment next steps.
+              Your order has been saved. Continue to Stripe Checkout to complete payment securely.
             </p>
             <p className="mt-4 break-all text-sm uppercase tracking-[0.18em] text-[var(--color-gold)]">
               Order Reference: {createdOrder._id}
             </p>
             <div className="mt-7 flex flex-col gap-4 sm:flex-row">
-              <Button to="/shop" variant="primary">Continue Shopping</Button>
-              {userLoggedIn ? <Button to="/account/orders" variant="outline">View My Orders</Button> : null}
+              <Button disabled={isSubmitting} onClick={resumePayment} variant="primary">
+                {isSubmitting ? 'Opening Secure Payment...' : 'Complete Payment'}
+              </Button>
+              <Button to="/account/orders" variant="outline">View My Orders</Button>
             </div>
           </div>
         ) : !userLoggedIn ? (
@@ -352,10 +372,7 @@ function Checkout() {
                 <div className="flex justify-between text-base font-semibold"><span>Total</span><span className="text-[var(--color-gold)]">{formatAmount(subtotal)}</span></div>
               </div>
               <Button className="mt-7 w-full" disabled={isSubmitting} type="submit" variant="primary">
-                {isSubmitting ? 'Creating Order...' : 'Create Order'}
-              </Button>
-              <Button className="mt-3 w-full" onClick={showPaymentComingSoon} type="button" variant="outline">
-                Payment Coming Soon
+                {isSubmitting ? 'Preparing Secure Payment...' : 'Proceed to Secure Payment'}
               </Button>
             </aside>
           </form>

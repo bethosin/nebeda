@@ -35,6 +35,8 @@ import NotFound from './pages/NotFound'
 import PrivacyPolicy from './pages/legal/PrivacyPolicy'
 import ShippingReturns from './pages/legal/ShippingReturns'
 import Terms from './pages/legal/Terms'
+import PaymentCancel from './pages/payment/PaymentCancel'
+import PaymentSuccess from './pages/payment/PaymentSuccess'
 import { isAdminAuthenticated } from './services/authService'
 
 function ProtectedAdminRoute({ children }) {
@@ -57,6 +59,8 @@ function App() {
               <Route element={<Shop />} path="/shop" />
               <Route element={<Cart />} path="/cart" />
               <Route element={<Checkout />} path="/checkout" />
+              <Route element={<PaymentSuccess />} path="/payment/success" />
+              <Route element={<PaymentCancel />} path="/payment/cancel" />
               <Route element={<Login />} path="/login" />
               <Route element={<Signup />} path="/signup" />
               <Route element={<AccountDashboard />} path="/account" />

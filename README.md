@@ -77,6 +77,8 @@ RESEND_API_KEY
 EMAIL_FROM_NAME
 EMAIL_FROM_ADDRESS
 BRAND_NOTIFICATION_EMAIL
+STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
 ENABLE_MAINTENANCE_ROUTES
 ```
 
@@ -85,10 +87,17 @@ Create `Frontend/nebeda/.env` containing:
 ```text
 VITE_API_URL
 VITE_APP_NAME
+VITE_STRIPE_PUBLISHABLE_KEY
 ```
 
 All `.env` variants are ignored by Git. Never commit credentials, tokens,
 database connection strings, or provider secrets.
+
+Stripe uses test mode until launch. Configure the Render webhook endpoint as
+`/api/payments/webhook` for `checkout.session.completed`,
+`checkout.session.expired`, and `payment_intent.payment_failed`. The frontend
+redirects to Stripe's hosted Checkout URL, so the publishable key is reserved
+for future Stripe.js features and the secret key remains backend-only.
 
 ## Local Checks
 
@@ -121,13 +130,13 @@ counts carefully, and never run it automatically.
 ## Current Status
 
 - Ready for GitHub push and staging deployment
-- Stripe payment is not implemented
+- Stripe Checkout is implemented in test mode; production keys and live webhook testing remain pending
 - Production Resend domain verification is not complete
 - Legal pages are staging placeholders and require professional review
 
 ## Future Roadmap
 
-- Stripe Checkout and payment reconciliation
+- Stripe production activation, webhook monitoring, and payment reconciliation
 - Verified production email domain and sender
 - Production hosting, DNS, monitoring, and backups
 - Final product photography and content review

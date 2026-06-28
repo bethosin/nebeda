@@ -9,6 +9,7 @@ import morgan from "morgan";
 import "./config/cloudinary.js";
 import connectDB from "./config/db.js";
 import { validateEnvironment } from "./config/env.js";
+import { stripeWebhookHandler } from "./controllers/paymentController.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
 import customOrderRoutes from "./routes/customOrderRoutes.js";
@@ -18,6 +19,7 @@ import healthRoutes from "./routes/healthRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import userAuthRoutes from "./routes/userAuthRoutes.js";
 
@@ -56,6 +58,11 @@ app.use(
     credentials: true,
   })
 );
+app.post(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhookHandler,
+);
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
@@ -80,6 +87,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userAuthRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/api/custom-orders", customOrderRoutes);
 app.use("/api/enquiries", enquiryRoutes);
 app.use("/api/newsletter", newsletterRoutes);
