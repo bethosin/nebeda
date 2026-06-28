@@ -2,13 +2,13 @@ import { motion } from 'framer-motion'
 import NewsletterSignup from '../components/common/NewsletterSignup'
 import InstagramFeed from '../components/home/InstagramFeed'
 import Button from '../components/ui/Button'
-import brandStoryImage from '../assets/images/brand-story.jpg'
-import bespokeImage from '../assets/images/female01.png'
+import brandStoryImage from '../assets/images/female04.png'
+import bespokeImage from '../assets/images/female02.png'
 import heritageImage from '../assets/images/male01.png'
 import menswearImage from '../assets/images/male02.png'
 import presenceImage from '../assets/images/female01.png'
 import readyToWearImage from '../assets/images/male03.png'
-import womenswearImage from '../assets/images/female02.png'
+import womenswearImage from '../assets/images/female03.png'
 import { instagramHandle, instagramUrl } from '../data/contactDetails'
 
 const fadeUp = {
@@ -95,7 +95,7 @@ const nebedaFeatures = [
 function CollectionCard({ collection, index }) {
   return (
     <motion.article
-      className={`group relative min-h-[360px] cursor-pointer overflow-hidden rounded-[1.75rem] border border-white/10 bg-black shadow-[0_28px_90px_rgba(0,0,0,0.36)] transition duration-500 hover:border-[rgba(190,151,83,0.78)] hover:shadow-[0_30px_100px_rgba(190,151,83,0.16)] sm:min-h-[430px] ${collection.className}`}
+      className={`group relative min-h-[380px] cursor-pointer overflow-hidden rounded-[1.25rem] border border-white/10 bg-black shadow-[0_28px_90px_rgba(0,0,0,0.36)] transition duration-500 hover:border-[rgba(190,151,83,0.78)] hover:shadow-[0_30px_100px_rgba(190,151,83,0.16)] sm:min-h-[430px] sm:rounded-[1.75rem] md:min-h-[460px] ${collection.className}`}
       initial="hidden"
       transition={{ duration: 0.75, ease: 'easeOut', delay: index * 0.08 }}
       variants={sectionVariants}
@@ -104,21 +104,21 @@ function CollectionCard({ collection, index }) {
     >
       <img
         alt={`${collection.title} collection`}
-        className={`absolute inset-0 h-full w-full object-cover ${collection.imagePosition} transition duration-700 ease-out group-hover:scale-[1.025]`}
+        className={`absolute inset-0 h-full w-full object-cover ${collection.imagePosition} transition duration-700 ease-out group-hover:scale-[1.015]`}
         loading="lazy"
         src={collection.image}
       />
       <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.78),rgba(0,0,0,0.22)_54%,rgba(0,0,0,0.04))]" />
-      <div className="absolute inset-x-5 top-5 flex items-center justify-between border-t border-[rgba(190,151,83,0.45)] pt-4 text-[10px] uppercase tracking-[0.3em] text-[var(--color-gold)] sm:inset-x-7">
+      <div className="absolute inset-x-4 top-4 flex items-center justify-between border-t border-[rgba(190,151,83,0.45)] pt-3 text-[10px] uppercase tracking-[0.24em] text-[var(--color-gold)] sm:inset-x-7 sm:top-5 sm:pt-4 sm:tracking-[0.3em]">
         <span>Collection</span>
         <span>{String(index + 1).padStart(2, '0')}</span>
       </div>
-      <div className="absolute inset-x-5 bottom-5 z-10 rounded-[1.25rem] border border-white/10 bg-black/32 p-5 backdrop-blur-md transition duration-500 group-hover:-translate-y-1 group-hover:border-[rgba(190,151,83,0.42)] sm:inset-x-7 sm:bottom-7 sm:p-6">
-        <h3 className="font-serif text-3xl leading-tight text-white sm:text-4xl">
+      <div className="absolute inset-x-3 bottom-3 z-10 rounded-[1rem] border border-white/10 bg-black/45 p-4 backdrop-blur-md transition duration-500 group-hover:-translate-y-1 group-hover:border-[rgba(190,151,83,0.42)] sm:inset-x-7 sm:bottom-7 sm:rounded-[1.25rem] sm:p-6">
+        <h3 className="font-serif text-2xl leading-tight text-white sm:text-3xl lg:text-4xl">
           {collection.title}
         </h3>
-        <p className="mt-3 max-w-xl text-sm leading-7 text-white/72">{collection.description}</p>
-        <Button className="mt-6 px-5 py-2.5 text-xs" to="/shop" variant="outline">
+        <p className="mt-3 max-w-xl text-sm leading-6 text-white/80 sm:leading-7">{collection.description}</p>
+        <Button className="mt-5 w-full px-5 py-2.5 text-xs sm:mt-6 sm:w-fit" to="/shop" variant="outline">
           View Collection
         </Button>
       </div>
@@ -142,7 +142,7 @@ function StoryStat({ stat }) {
 function FeatureCard({ feature, index }) {
   return (
     <motion.article
-      className={`group relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-[rgba(255,255,255,0.045)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-md transition duration-500 hover:-translate-y-1 hover:border-[rgba(190,151,83,0.62)] hover:bg-[rgba(243,234,217,0.08)] hover:shadow-[0_28px_90px_rgba(190,151,83,0.13)] sm:p-7 ${feature.className}`}
+      className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-[rgba(255,255,255,0.045)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-md transition duration-500 hover:-translate-y-1 hover:border-[rgba(190,151,83,0.62)] hover:bg-[rgba(243,234,217,0.08)] hover:shadow-[0_28px_90px_rgba(190,151,83,0.13)] sm:rounded-[1.5rem] sm:p-7 ${feature.className}`}
       initial={{ opacity: 0, y: 26 }}
       transition={{ duration: 0.7, ease: 'easeOut', delay: index * 0.07 }}
       viewport={{ once: true, amount: 0.25 }}
@@ -152,7 +152,7 @@ function FeatureCard({ feature, index }) {
       <div className="flex size-14 items-center justify-center rounded-full border border-[rgba(190,151,83,0.5)] bg-[rgba(190,151,83,0.1)] text-sm font-semibold tracking-[0.18em] text-[var(--color-gold)] transition duration-500 group-hover:border-[rgba(215,179,107,0.9)] group-hover:bg-[rgba(190,151,83,0.16)]">
         {feature.icon}
       </div>
-      <h3 className="mt-8 font-serif text-2xl leading-tight text-white sm:text-3xl">
+      <h3 className="mt-6 break-words font-serif text-2xl leading-tight text-white sm:mt-8 sm:text-3xl">
         {feature.title}
       </h3>
       <p className="mt-4 text-sm leading-7 text-[var(--color-muted)] sm:text-base">
@@ -165,44 +165,44 @@ function FeatureCard({ feature, index }) {
 function Home() {
   return (
     <>
-    <section className="relative isolate min-h-[calc(100svh-81px)] overflow-hidden bg-black px-5 py-14 text-white sm:px-8 sm:py-16 lg:px-10 lg:py-5">
+    <section className="relative isolate min-h-[calc(100svh-81px)] overflow-hidden bg-black px-4 py-10 text-white sm:px-8 sm:py-16 lg:px-10 lg:py-5">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_20%,rgba(190,151,83,0.18),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_34%)]" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-[rgba(190,151,83,0.12)] to-transparent" />
 
-      <div className="mx-auto grid min-h-[calc(100svh-210px)] max-w-7xl items-center gap-14 lg:grid-cols-[1.02fr_0.98fr]">
+      <div className="mx-auto grid w-full max-w-7xl items-center gap-10 lg:min-h-[calc(100svh-120px)] lg:grid-cols-[1.02fr_0.98fr] lg:gap-14">
         <motion.div
           animate="visible"
-          className="max-w-3xl"
+          className="min-w-0 max-w-3xl"
           initial="hidden"
           transition={{ duration: 0.8, ease: 'easeOut', staggerChildren: 0.12 }}
         >
           <motion.p
-            className="mb-6 text-xs font-semibold uppercase tracking-[0.36em] text-[var(--color-gold)]"
+            className="mb-5 max-w-2xl text-[11px] font-semibold uppercase leading-6 tracking-[0.2em] text-[var(--color-gold)] sm:mb-6 sm:text-xs sm:tracking-[0.36em]"
             variants={fadeUp}
           >
             UK Based &bull; Worldwide Delivery &bull; Bespoke & Ready to Wear
           </motion.p>
 
           <motion.h1
-            className="font-serif text-4xl leading-[1.02] tracking-[-0.03em] text-[var(--color-soft-white)] sm:text-6xl lg:text-7xl xl:text-8xl"
+            className="max-w-3xl font-serif text-[clamp(2.25rem,11vw,3.25rem)] leading-[1.08] text-[var(--color-soft-white)] sm:text-6xl sm:leading-[1.04] lg:text-7xl xl:text-8xl"
             variants={fadeUp}
           >
             <span className="block">Luxury African Fashion.</span>
           </motion.h1>
 
           <motion.p
-            className="mt-7 max-w-2xl text-base leading-8 text-[var(--color-muted)] sm:text-lg"
+            className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-muted)] sm:mt-7 sm:text-lg sm:leading-8"
             variants={fadeUp}
           >
             Nebeda Threads creates elegant men&rsquo;s and women&rsquo;s garments that celebrate African
             heritage with a modern luxury finish.
           </motion.p>
 
-          <motion.div className="mt-9 flex flex-col gap-4 sm:flex-row" variants={fadeUp}>
-            <Button to="/shop" variant="primary">
+          <motion.div className="mt-8 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:gap-4" variants={fadeUp}>
+            <Button className="w-full sm:w-fit" to="/shop" variant="primary">
               Shop Collection
             </Button>
-            <Button to="/custom-order" variant="outline">
+            <Button className="w-full sm:w-fit" to="/custom-order" variant="outline">
               Start Custom Order
             </Button>
           </motion.div>
@@ -210,44 +210,44 @@ function Home() {
 
         <motion.div
           animate={{ opacity: 1, x: 0 }}
-          className="relative mx-auto h-[440px] w-full max-w-[560px] sm:h-[520px] lg:h-[620px]"
+          className="relative mx-auto h-[400px] w-full min-w-0 max-w-[520px] sm:h-[520px] sm:max-w-[560px] lg:h-[620px]"
           initial={{ opacity: 0, x: 34 }}
           transition={{ duration: 0.9, ease: 'easeOut', delay: 0.18 }}
         >
-          <div className="group absolute left-4 top-8 h-[72%] w-[58%] overflow-hidden rounded-t-full rounded-b-[1.75rem] border border-[rgba(190,151,83,0.48)] bg-black p-3 shadow-[0_34px_90px_rgba(0,0,0,0.42)] transition duration-500 hover:border-[rgba(215,179,107,0.84)] hover:shadow-[0_34px_95px_rgba(190,151,83,0.22)]">
-            <div className="relative flex h-full items-end overflow-hidden rounded-t-full rounded-b-[1.25rem] border border-white/10 p-5">
+          <div className="group absolute left-0 top-6 h-[74%] w-[62%] overflow-hidden rounded-t-full rounded-b-[1.25rem] border border-[rgba(190,151,83,0.48)] bg-black p-2 shadow-[0_34px_90px_rgba(0,0,0,0.42)] transition duration-500 hover:border-[rgba(215,179,107,0.84)] hover:shadow-[0_34px_95px_rgba(190,151,83,0.22)] sm:left-4 sm:top-8 sm:h-[72%] sm:w-[58%] sm:rounded-b-[1.75rem] sm:p-3">
+            <div className="relative flex h-full items-end overflow-hidden rounded-t-full rounded-b-[1rem] border border-white/10 p-4 sm:rounded-b-[1.25rem] sm:p-5">
               <img
                 alt="Nebeda Threads heritage silhouette fashion editorial"
-                className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-105"
+                className="absolute inset-0 h-full w-full object-cover object-[center_16%] transition duration-700 ease-out group-hover:scale-[1.02]"
                 loading="lazy"
                 src={heritageImage}
               />
               <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.75),rgba(0,0,0,0.15))]" />
               <div className="relative z-10">
-                <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-gold)]">Editorial</p>
-                <p className="mt-2 font-serif text-3xl leading-tight text-white">Heritage Essence</p>
-                <p className="mt-3 max-w-[15rem] text-sm leading-6 text-white/72">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-gold)] sm:text-xs sm:tracking-[0.28em]">Editorial</p>
+                <p className="mt-2 font-serif text-2xl leading-tight text-white sm:text-3xl">Heritage Essence</p>
+                <p className="mt-2 max-w-[15rem] text-xs leading-5 text-white/80 sm:mt-3 sm:text-sm sm:leading-6">
                   African luxury, redefined.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="group absolute bottom-6 right-0 h-[64%] w-[54%] overflow-hidden rounded-[1.5rem] border border-white/12 bg-[var(--color-cream)] p-3 text-white shadow-[0_28px_80px_rgba(0,0,0,0.38)] transition duration-500 hover:border-[rgba(215,179,107,0.72)] hover:shadow-[0_30px_90px_rgba(190,151,83,0.24)]">
-            <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-[1rem] border border-[rgba(190,151,83,0.28)] p-5">
+          <div className="group absolute bottom-4 right-0 h-[63%] w-[58%] overflow-hidden rounded-[1.25rem] border border-white/12 bg-[var(--color-cream)] p-2 text-white shadow-[0_28px_80px_rgba(0,0,0,0.38)] transition duration-500 hover:border-[rgba(215,179,107,0.72)] hover:shadow-[0_30px_90px_rgba(190,151,83,0.24)] sm:bottom-6 sm:h-[64%] sm:w-[54%] sm:rounded-[1.5rem] sm:p-3">
+            <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-[0.9rem] border border-[rgba(190,151,83,0.28)] p-4 sm:rounded-[1rem] sm:p-5">
               <img
                 alt="Nebeda Threads made for presence fashion editorial"
-                className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-105"
+                className="absolute inset-0 h-full w-full object-cover object-[center_18%] transition duration-700 ease-out group-hover:scale-[1.02]"
                 loading="lazy"
                 src={presenceImage}
               />
               <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.75),rgba(0,0,0,0.15))]" />
-              <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-gold)]">
+              <p className="relative z-10 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)] sm:text-xs sm:tracking-[0.28em]">
                 Bespoke
               </p>
               <div className="relative z-10">
-                <p className="font-serif text-4xl leading-none">Made for Presence</p>
-                <p className="mt-4 text-sm leading-6 text-white/72">
+                <p className="font-serif text-2xl leading-tight sm:text-3xl xl:text-4xl xl:leading-none">Made for Presence</p>
+                <p className="mt-2 text-xs leading-5 text-white/80 sm:mt-4 sm:text-sm sm:leading-6">
                   Designed to command attention with elegance and confidence.
                 </p>
               </div>
@@ -258,24 +258,24 @@ function Home() {
       </div>
     </section>
 
-    <section id="signature-collections" className="relative overflow-hidden bg-black px-5 py-20 text-white sm:px-8 lg:px-10 lg:py-28">
+    <section id="signature-collections" className="relative overflow-hidden bg-black px-4 py-16 text-white sm:px-8 sm:py-20 lg:px-10 lg:py-28">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_12%,rgba(190,151,83,0.14),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.035),transparent_28%)]" />
       <div className="relative mx-auto max-w-7xl">
         <motion.div
-          className="mb-12 flex max-w-4xl flex-col gap-5 lg:mb-16"
+          className="mb-10 flex min-w-0 max-w-4xl flex-col gap-4 sm:mb-12 sm:gap-5 lg:mb-16"
           initial="hidden"
           transition={{ duration: 0.75, ease: 'easeOut' }}
           variants={sectionVariants}
           viewport={{ once: true, amount: 0.35 }}
           whileInView="visible"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[var(--color-gold)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-gold)] sm:text-xs sm:tracking-[0.34em]">
             Nebeda Threads
           </p>
-          <h2 className="font-serif text-4xl leading-tight text-[var(--color-soft-white)] sm:text-5xl lg:text-6xl">
+          <h2 className="break-words font-serif text-3xl leading-tight text-[var(--color-soft-white)] sm:text-5xl lg:text-6xl">
             Signature Collections
           </h2>
-          <p className="max-w-2xl text-base leading-8 text-[var(--color-muted)] sm:text-lg">
+          <p className="max-w-2xl text-sm leading-7 text-[var(--color-muted)] sm:text-lg sm:leading-8">
             Discover luxury African fashion designed for modern elegance, cultural pride, and
             timeless confidence.
           </p>
@@ -289,25 +289,25 @@ function Home() {
       </div>
     </section>
 
-    <section className="relative overflow-hidden bg-[var(--color-black)] px-5 py-20 text-white sm:px-8 md:py-24 lg:px-10 lg:py-32">
+    <section className="relative overflow-hidden bg-[var(--color-black)] px-4 py-16 text-white sm:px-8 sm:py-20 md:py-24 lg:px-10 lg:py-32">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_22%,rgba(190,151,83,0.12),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.025),transparent_36%)]" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 2xl:max-w-[1500px]">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-10 sm:gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 2xl:max-w-[1500px]">
         <motion.div
-          className="max-w-3xl"
+          className="min-w-0 max-w-3xl"
           initial={{ opacity: 0, x: -28 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
           viewport={{ once: true, amount: 0.3 }}
           whileInView={{ opacity: 1, x: 0 }}
         >
           <div className="mb-7 h-px w-20 bg-[var(--color-gold)]" />
-          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[var(--color-gold)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-gold)] sm:text-xs sm:tracking-[0.34em]">
             OUR STORY
           </p>
-          <h2 className="mt-5 max-w-3xl font-serif text-4xl leading-tight text-[var(--color-soft-white)] sm:text-5xl lg:text-6xl">
+          <h2 className="mt-5 max-w-3xl break-words font-serif text-3xl leading-tight text-[var(--color-soft-white)] sm:text-5xl lg:text-6xl">
             Designed with Purpose. Crafted with Excellence.
           </h2>
 
-          <div className="mt-8 space-y-6 text-base leading-8 text-[var(--color-muted)] sm:text-lg">
+          <div className="mt-7 space-y-5 text-sm leading-7 text-[var(--color-muted)] sm:mt-8 sm:space-y-6 sm:text-lg sm:leading-8">
             <p>
               Nebeda Threads was founded to celebrate the richness of African heritage through
               modern luxury fashion.
@@ -323,39 +323,39 @@ function Home() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          <div className="mt-9 grid gap-5 sm:mt-10 sm:grid-cols-2">
             {storyStats.map((stat) => (
               <StoryStat key={stat.number} stat={stat} />
             ))}
           </div>
 
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <Button to="/about" variant="primary">
+          <div className="mt-9 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:gap-4">
+            <Button className="w-full sm:w-fit" to="/about" variant="primary">
               About Nebeda
             </Button>
-            <Button to="/custom-order" variant="outline">
+            <Button className="w-full sm:w-fit" to="/custom-order" variant="outline">
               Custom Order
             </Button>
           </div>
         </motion.div>
 
         <motion.div
-          className="relative min-h-[420px] overflow-hidden rounded-[1.75rem] border border-[rgba(190,151,83,0.42)] bg-black p-3 shadow-[0_30px_100px_rgba(0,0,0,0.42)] sm:min-h-[520px] lg:min-h-[680px]"
+          className="relative min-h-[380px] overflow-hidden rounded-[1.25rem] border border-[rgba(190,151,83,0.42)] bg-black p-2 shadow-[0_30px_100px_rgba(0,0,0,0.42)] sm:min-h-[520px] sm:rounded-[1.75rem] sm:p-3 lg:min-h-[680px]"
           initial={{ opacity: 0, x: 30 }}
           transition={{ duration: 0.85, ease: 'easeOut', delay: 0.08 }}
           viewport={{ once: true, amount: 0.25 }}
           whileInView={{ opacity: 1, x: 0 }}
         >
-          <div className="group relative h-full min-h-[396px] overflow-hidden rounded-[1.25rem] border border-white/10 sm:min-h-[496px] lg:min-h-[656px]">
+          <div className="group relative h-full min-h-[364px] overflow-hidden rounded-[1rem] border border-white/10 sm:min-h-[496px] sm:rounded-[1.25rem] lg:min-h-[656px]">
             <img
               alt="Nebeda Threads brand story editorial"
-              className="absolute inset-0 h-full w-full object-cover object-[center_18%] transition duration-700 ease-out group-hover:scale-[1.025]"
+              className="absolute inset-0 h-full w-full object-cover object-[center_16%] transition duration-700 ease-out group-hover:scale-[1.015]"
               loading="lazy"
               src={brandStoryImage}
             />
             <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.56),rgba(0,0,0,0.08)_58%,rgba(0,0,0,0.02))]" />
-            <div className="absolute bottom-5 left-5 right-5 border-t border-[rgba(190,151,83,0.48)] pt-4 sm:bottom-7 sm:left-7 sm:right-7">
-              <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-gold)]">
+            <div className="absolute bottom-4 left-4 right-4 border-t border-[rgba(190,151,83,0.48)] pt-3 sm:bottom-7 sm:left-7 sm:right-7 sm:pt-4">
+              <p className="text-[10px] uppercase leading-5 tracking-[0.2em] text-[var(--color-gold)] sm:text-xs sm:tracking-[0.28em]">
                 Culture. Confidence. Craft.
               </p>
             </div>
@@ -364,23 +364,23 @@ function Home() {
       </div>
     </section>
 
-    <section className="relative overflow-hidden bg-black px-5 py-20 text-white sm:px-8 md:py-24 lg:px-10 lg:py-32">
+    <section className="relative overflow-hidden bg-black px-4 py-16 text-white sm:px-8 sm:py-20 md:py-24 lg:px-10 lg:py-32">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(190,151,83,0.13),transparent_30%),linear-gradient(180deg,rgba(243,234,217,0.035),transparent_34%)]" />
       <div className="relative mx-auto max-w-7xl 2xl:max-w-[1500px]">
         <motion.div
-          className="mx-auto mb-12 max-w-4xl text-center lg:mb-16"
+          className="mx-auto mb-10 min-w-0 max-w-4xl text-center sm:mb-12 lg:mb-16"
           initial={{ opacity: 0, y: 28 }}
           transition={{ duration: 0.75, ease: 'easeOut' }}
           viewport={{ once: true, amount: 0.35 }}
           whileInView={{ opacity: 1, y: 0 }}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[var(--color-gold)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-gold)] sm:text-xs sm:tracking-[0.34em]">
             WHY NEBEDA
           </p>
-          <h2 className="mt-5 font-serif text-4xl leading-tight text-[var(--color-soft-white)] sm:text-5xl lg:text-6xl">
+          <h2 className="mt-5 break-words font-serif text-3xl leading-tight text-[var(--color-soft-white)] sm:text-5xl lg:text-6xl">
             Luxury Is in the Details
           </h2>
-          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-[var(--color-muted)] sm:text-lg">
+          <p className="mx-auto mt-5 max-w-3xl text-sm leading-7 text-[var(--color-muted)] sm:mt-6 sm:text-lg sm:leading-8">
             From fabric selection to final delivery, every Nebeda Threads piece is handled with
             care, precision, and a commitment to excellence.
           </p>
@@ -394,28 +394,28 @@ function Home() {
       </div>
     </section>
 
-    <section className="relative overflow-hidden bg-black px-5 py-20 text-white sm:px-8 md:py-24 lg:px-10 lg:py-32">
+    <section className="relative overflow-hidden bg-black px-4 py-16 text-white sm:px-8 sm:py-20 md:py-24 lg:px-10 lg:py-32">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(190,151,83,0.12),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.026),transparent_34%)]" />
       <div className="relative mx-auto max-w-7xl 2xl:max-w-[1500px]">
         <motion.div
-          className="mb-12 flex flex-col gap-6 lg:mb-16 lg:flex-row lg:items-end lg:justify-between"
+          className="mb-10 flex min-w-0 flex-col gap-6 sm:mb-12 lg:mb-16 lg:flex-row lg:items-end lg:justify-between"
           initial={{ opacity: 0, y: 28 }}
           transition={{ duration: 0.75, ease: 'easeOut' }}
           viewport={{ once: true, amount: 0.35 }}
           whileInView={{ opacity: 1, y: 0 }}
         >
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[var(--color-gold)]">
+          <div className="min-w-0 max-w-3xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-gold)] sm:text-xs sm:tracking-[0.34em]">
               FOLLOW THE STYLE
             </p>
-            <h2 className="mt-5 font-serif text-4xl leading-tight text-[var(--color-soft-white)] sm:text-5xl lg:text-6xl">
+            <h2 className="mt-5 break-words font-serif text-3xl leading-tight text-[var(--color-soft-white)] sm:text-5xl lg:text-6xl">
               Follow Our Journey
             </h2>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-[var(--color-muted)] sm:text-lg">
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-muted)] sm:mt-6 sm:text-lg sm:leading-8">
               See the latest Nebeda Threads collections, bespoke creations, customer styles, and
               behind the scenes craftsmanship.
             </p>
-            <p className="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">
+            <p className="mt-4 break-all text-xs font-semibold uppercase leading-6 tracking-[0.12em] text-[var(--color-gold)] sm:text-sm sm:tracking-[0.22em]">
               {instagramHandle}
             </p>
           </div>
@@ -430,38 +430,40 @@ function Home() {
           </Button>
         </motion.div>
 
-        <InstagramFeed />
+        <div className="min-w-0 overflow-hidden">
+          <InstagramFeed />
+        </div>
       </div>
     </section>
 
-    <section className="relative overflow-hidden bg-black px-5 pb-20 text-white sm:px-8 md:pb-24 lg:px-10 lg:pb-32">
-      <div className="mx-auto mb-12 max-w-7xl 2xl:max-w-[1500px]">
+    <section className="relative overflow-hidden bg-black px-4 pb-16 text-white sm:px-8 sm:pb-20 md:pb-24 lg:px-10 lg:pb-32">
+      <div className="mx-auto mb-10 min-w-0 max-w-7xl overflow-hidden sm:mb-12 2xl:max-w-[1500px]">
         <NewsletterSignup source="Home" />
       </div>
       <motion.div
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] border border-[rgba(190,151,83,0.4)] bg-[linear-gradient(135deg,rgba(243,234,217,0.1),rgba(255,255,255,0.035))] px-6 py-12 shadow-[0_30px_100px_rgba(0,0,0,0.34)] sm:px-10 lg:px-14 2xl:max-w-[1500px]"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-[1.25rem] border border-[rgba(190,151,83,0.4)] bg-[linear-gradient(135deg,rgba(243,234,217,0.1),rgba(255,255,255,0.035))] px-5 py-10 shadow-[0_30px_100px_rgba(0,0,0,0.34)] sm:rounded-[1.75rem] sm:px-10 sm:py-12 lg:px-14 2xl:max-w-[1500px]"
         initial={{ opacity: 0, y: 28 }}
         transition={{ duration: 0.75, ease: 'easeOut' }}
         viewport={{ once: true, amount: 0.35 }}
         whileInView={{ opacity: 1, y: 0 }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(190,151,83,0.18),transparent_30%)]" />
-        <div className="relative max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-gold)]">
+        <div className="relative min-w-0 max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)] sm:text-xs sm:tracking-[0.3em]">
             Bespoke Service
           </p>
-          <h2 className="mt-4 font-serif text-3xl leading-tight text-white sm:text-5xl">
+          <h2 className="mt-4 break-words font-serif text-3xl leading-tight text-white sm:text-5xl">
             Ready to Create Your Nebeda Piece?
           </h2>
-          <p className="mt-5 text-base leading-8 text-[var(--color-muted)] sm:text-lg">
+          <p className="mt-5 text-sm leading-7 text-[var(--color-muted)] sm:text-lg sm:leading-8">
             Start a custom order and let Nebeda Threads design a garment around your style,
             measurements, fabric choice, and occasion.
           </p>
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-            <Button to="/custom-order" variant="primary">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <Button className="w-full sm:w-fit" to="/custom-order" variant="primary">
               Start Custom Order
             </Button>
-            <Button to="/shop" variant="outline">
+            <Button className="w-full sm:w-fit" to="/shop" variant="outline">
               Shop Collection
             </Button>
           </div>
