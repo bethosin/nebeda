@@ -18,6 +18,7 @@ function TextField({ label, name, onChange, placeholder, required, type = 'text'
         name={name}
         onChange={onChange}
         placeholder={placeholder}
+        required={required}
         type={type}
         value={value}
       />
@@ -36,6 +37,7 @@ function SelectField({ label, name, onChange, options, required, value }) {
         className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none transition focus:border-[var(--color-gold)]"
         name={name}
         onChange={onChange}
+        required={required}
         value={value}
       >
         <option className="bg-black" value="">Select {label.toLowerCase()}</option>
@@ -57,6 +59,7 @@ function ProductForm({
   submittingLabel,
   error,
   isSubmitting,
+  requireImages = false,
 }) {
   return (
     <form
@@ -104,23 +107,11 @@ function ProductForm({
           <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">
             Short Description *
           </span>
-          <textarea className="mt-3 min-h-32 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-[var(--color-gold)]" name="shortDescription" onChange={onChange} value={form.shortDescription} />
+          <textarea className="mt-3 min-h-32 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-[var(--color-gold)]" name="shortDescription" onChange={onChange} required value={form.shortDescription} />
         </label>
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">
-            Full Description *
-          </span>
-          <textarea className="mt-3 min-h-32 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-[var(--color-gold)]" name="description" onChange={onChange} value={form.description} />
-        </label>
-        <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">
-            Care Instructions
-          </span>
-          <textarea className="mt-3 min-h-32 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-[var(--color-gold)]" name="careInstructions" onChange={onChange} value={form.careInstructions} />
-        </label>
-        <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">
-            Product Images
+            Product Images{requireImages ? ' *' : ''}
           </span>
           <input
             accept="image/jpeg,image/jpg,image/png,image/webp"
@@ -128,6 +119,7 @@ function ProductForm({
             multiple
             name="images"
             onChange={onChange}
+            required={requireImages}
             type="file"
           />
           <p className="mt-2 text-sm text-white/42">Upload up to 6 images.</p>

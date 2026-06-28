@@ -52,7 +52,7 @@ function buildProductFormData(form) {
 
   formData.append('name', form.name)
   formData.append('shortDescription', form.shortDescription)
-  formData.append('description', form.description)
+  formData.append('description', form.shortDescription)
   formData.append('categories', JSON.stringify(form.categories))
   formData.append('displayCategory', form.displayCategory)
   formData.append('gender', form.gender)
@@ -64,7 +64,10 @@ function buildProductFormData(form) {
   formData.append('sizes', JSON.stringify(sizes))
   formData.append('colors', JSON.stringify(colors))
   formData.append('fabric', form.fabric)
-  formData.append('careInstructions', form.careInstructions)
+  formData.append(
+    'careInstructions',
+    form.careInstructions || 'Please follow fabric care guidance.',
+  )
   formData.append('isFeatured', String(form.isFeatured))
   formData.append('isActive', String(form.isActive))
 

@@ -62,9 +62,10 @@ function AddProduct() {
         navigate('/admin/login', { replace: true })
         return
       }
-      const message = apiError.message || 'Unable to create product.'
+      const errors = apiError.data?.errors || {}
+      const message = Object.values(errors).join(' ') || apiError.message || 'Unable to create product.'
       setError(message)
-      setFieldErrors(apiError.data?.errors || {})
+      setFieldErrors(errors)
       showToast({ message, type: 'error' })
     } finally {
       setIsSubmitting(false)
@@ -87,6 +88,7 @@ function AddProduct() {
         isSubmitting={isSubmitting}
         onChange={updateField}
         onSubmit={submitProduct}
+        requireImages
         submitLabel="Create Product"
         submittingLabel="Creating Product..."
       />

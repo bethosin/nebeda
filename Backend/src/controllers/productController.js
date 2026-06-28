@@ -167,6 +167,10 @@ const normalizeProductPayload = (body) => {
     payload.numericPrice = parseNumberField(body.numericPrice);
   }
 
+  if (!payload.description && payload.shortDescription) {
+    payload.description = payload.shortDescription;
+  }
+
   return payload;
 };
 
@@ -258,11 +262,17 @@ const uploadProductImagesToCloudinary = async (files = [], productName) => {
 
 const createProduct = asyncHandler(async (req, res) => {
   const payload = normalizeProductPayload(req.body);
+  payload.careInstructions ||= "";
   const validationError = validateProductPayload(payload);
 
   if (validationError) {
     res.status(400);
     throw createValidationError(validationError);
+  }
+
+  if (!req.files?.length) {
+    res.status(400);
+    throw createValidationError({ images: "At least one product image is required" });
   }
 
   let uploadedImages = [];

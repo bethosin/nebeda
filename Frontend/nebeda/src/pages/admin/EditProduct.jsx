@@ -104,9 +104,10 @@ function EditProduct() {
         navigate('/admin/login', { replace: true })
         return
       }
-      const message = apiError.message || 'Unable to update product.'
+      const errors = apiError.data?.errors || {}
+      const message = Object.values(errors).join(' ') || apiError.message || 'Unable to update product.'
       setError(message)
-      setFieldErrors(apiError.data?.errors || {})
+      setFieldErrors(errors)
       showToast({ message, type: 'error' })
     } finally {
       setIsSubmitting(false)
