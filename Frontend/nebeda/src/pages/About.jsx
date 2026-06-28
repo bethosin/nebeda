@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import Button from '../components/ui/Button'
-import craftImage from '../assets/images/about-craft.jpg'
-import founderImage from '../assets/images/about-founder.jpg'
+import craftImage from '../assets/images/founder.jpeg'
+import founderImage from '../assets/images/ceo.jpeg'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
