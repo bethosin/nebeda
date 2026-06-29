@@ -8,12 +8,12 @@ import { logoutAdmin } from '../../services/authService'
 import {
   archiveAdminOrder,
   getAdminOrders,
-  updateAdminOrder,
   updateAdminOrderStatus,
   updateAdminPaymentStatus,
 } from '../../services/orderService'
 
 const orderStatuses = ['All', 'Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
+const fulfilmentStatuses = ['Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
 const paymentStatuses = ['All', 'Pending', 'Paid', 'Failed', 'Refunded']
 
 function formatAmount(value) {
@@ -41,6 +41,8 @@ function AdminOrders() {
   const [stats, setStats] = useState({})
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [orderToArchive, setOrderToArchive] = useState(null)
+  const [pendingStatusAction, setPendingStatusAction] = useState(null)
+  const [isStatusSaving, setIsStatusSaving] = useState(false)
   const [filters, setFilters] = useState({
     search: '',
     orderStatus: 'All',
@@ -130,23 +132,45 @@ function AdminOrders() {
       trackingNumber: order.shipping?.trackingNumber || '',
       trackingCarrier: order.shipping?.trackingCarrier || '',
       trackingUrl: order.shipping?.trackingUrl || '',
+      dispatchNotes: order.shipping?.dispatchNotes || '',
+      deliveryNotes: order.shipping?.deliveryNotes || '',
+      note: '',
       adminNotes: order.adminNotes || '',
     })
   }
 
-  const saveStatus = async () => {
+  const performStatusUpdate = async () => {
+    setIsStatusSaving(true)
     try {
       const data = await updateAdminOrderStatus(selectedOrder._id, {
         orderStatus: updateForm.orderStatus,
+        trackingNumber: updateForm.trackingNumber,
+        trackingCarrier: updateForm.trackingCarrier,
+        trackingUrl: updateForm.trackingUrl,
+        dispatchNotes: updateForm.dispatchNotes,
+        deliveryNotes: updateForm.deliveryNotes,
+        note: updateForm.note,
         adminNotes: updateForm.adminNotes,
       })
       setSelectedOrder(data.order)
-      showToast({ message: 'Order status updated.', type: 'success' })
+      setPendingStatusAction(null)
+      setUpdateForm((current) => ({ ...current, note: '' }))
+      showToast({ message: 'Order status updated successfully.', type: 'success' })
       if (data.emailWarning) showToast({ message: data.emailWarning, type: 'warning' })
       await loadOrders()
     } catch (apiError) {
       showToast({ message: apiError.message || 'Unable to update order status.', type: 'error' })
+    } finally {
+      setIsStatusSaving(false)
     }
+  }
+
+  const saveStatus = () => {
+    if (['Delivered', 'Cancelled'].includes(updateForm.orderStatus)) {
+      setPendingStatusAction(updateForm.orderStatus)
+      return
+    }
+    performStatusUpdate()
   }
 
   const savePayment = async () => {
@@ -165,17 +189,6 @@ function AdminOrders() {
     }
   }
 
-  const saveAll = async () => {
-    try {
-      const data = await updateAdminOrder(selectedOrder._id, updateForm)
-      setSelectedOrder(data.order)
-      showToast({ message: 'Order updated successfully.', type: 'success' })
-      if (data.emailWarning) showToast({ message: data.emailWarning, type: 'warning' })
-      await loadOrders()
-    } catch (apiError) {
-      showToast({ message: apiError.message || 'Unable to update order.', type: 'error' })
-    }
-  }
 
   const confirmArchive = async () => {
     try {
@@ -298,6 +311,8 @@ function AdminOrders() {
               <p>Tracking number: {selectedOrder.shipping?.trackingNumber || 'Not assigned'}</p>
               <p>Tracking carrier: {selectedOrder.shipping?.trackingCarrier || 'Not assigned'}</p>
               {selectedOrder.shipping?.trackingUrl ? <a className="break-all text-[var(--color-gold)]" href={selectedOrder.shipping.trackingUrl} rel="noreferrer" target="_blank">Open tracking link</a> : null}
+              <p>Dispatch notes: {selectedOrder.shipping?.dispatchNotes || 'None'}</p>
+              <p>Delivery notes: {selectedOrder.shipping?.deliveryNotes || 'None'}</p>
             </div>
             <div className="rounded-2xl border border-white/10 p-5 text-sm leading-7 text-[var(--color-muted)]">
               <p className="font-semibold text-white">Stripe Information</p>
@@ -305,6 +320,10 @@ function AdminOrders() {
               <p>Session: {selectedOrder.stripeSessionId || 'Not set'}</p>
               <p>Intent: {selectedOrder.paymentIntentId || 'Not set'}</p>
               <p>Paid at: {selectedOrder.paidAt ? formatDate(selectedOrder.paidAt) : 'Not paid'}</p>
+              <p>Processing: {formatDate(selectedOrder.processingAt)}</p>
+              <p>Shipped: {formatDate(selectedOrder.shippedAt)}</p>
+              <p>Delivered: {formatDate(selectedOrder.deliveredAt)}</p>
+              <p>Cancelled: {formatDate(selectedOrder.cancelledAt)}</p>
             </div>
           </div>
 
@@ -335,6 +354,17 @@ function AdminOrders() {
                 ))}
                 {selectedOrder.orderStatus === 'Cancelled' ? <span className="rounded-full border border-[var(--color-gold)] bg-[rgba(190,151,83,0.14)] px-3 py-2 text-[var(--color-gold)]">Cancelled</span> : null}
               </div>
+              <div className="mt-5 space-y-3 border-t border-white/10 pt-5 text-sm">
+                {selectedOrder.statusHistory?.length ? selectedOrder.statusHistory.map((entry, index) => (
+                  <div className="flex items-start justify-between gap-4" key={`${entry.status}-${entry.changedAt}-${index}`}>
+                    <div>
+                      <p className="font-semibold text-white">{entry.status}</p>
+                      {entry.note ? <p className="mt-1 text-[var(--color-muted)]">{entry.note}</p> : null}
+                    </div>
+                    <time className="shrink-0 text-xs text-white/48">{formatDate(entry.changedAt)}</time>
+                  </div>
+                )) : <p className="text-[var(--color-muted)]">No status history recorded yet.</p>}
+              </div>
             </div>
           </div>
 
@@ -356,7 +386,8 @@ function AdminOrders() {
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             <select className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, orderStatus: event.target.value }))} value={updateForm.orderStatus}>
-              {orderStatuses.filter((item) => item !== 'All').map((item) => <option className="bg-black" key={item}>{item}</option>)}
+              {updateForm.orderStatus === 'Pending' ? <option className="bg-black" disabled>Pending</option> : null}
+              {fulfilmentStatuses.map((item) => <option className="bg-black" key={item}>{item}</option>)}
             </select>
             <select className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, paymentStatus: event.target.value }))} value={updateForm.paymentStatus}>
               {paymentStatuses.filter((item) => item !== 'All').map((item) => <option className="bg-black" key={item}>{item}</option>)}
@@ -364,22 +395,38 @@ function AdminOrders() {
             <select className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, paymentProvider: event.target.value }))} value={updateForm.paymentProvider}>
               {['Stripe', 'Manual', 'Not Set'].map((item) => <option className="bg-black" key={item}>{item}</option>)}
             </select>
-            <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingNumber: event.target.value }))} placeholder="Tracking number" value={updateForm.trackingNumber} />
-            <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingCarrier: event.target.value }))} placeholder="Tracking carrier" value={updateForm.trackingCarrier} />
-            <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)] md:col-span-2" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="Tracking URL" type="url" value={updateForm.trackingUrl} />
+            {updateForm.orderStatus === 'Shipped' ? (
+              <>
+                <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingCarrier: event.target.value }))} placeholder="Tracking carrier" value={updateForm.trackingCarrier} />
+                <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingNumber: event.target.value }))} placeholder="Tracking number" value={updateForm.trackingNumber} />
+                <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)] md:col-span-2" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="Tracking URL" type="url" value={updateForm.trackingUrl} />
+                <textarea className="min-h-24 rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)] md:col-span-2" onChange={(event) => setUpdateForm((current) => ({ ...current, dispatchNotes: event.target.value }))} placeholder="Dispatch notes" value={updateForm.dispatchNotes} />
+              </>
+            ) : null}
+            {updateForm.orderStatus === 'Delivered' ? <textarea className="min-h-24 rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)] md:col-span-2" onChange={(event) => setUpdateForm((current) => ({ ...current, deliveryNotes: event.target.value }))} placeholder="Delivery notes" value={updateForm.deliveryNotes} /> : null}
+            <textarea className="min-h-24 rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)] md:col-span-2" onChange={(event) => setUpdateForm((current) => ({ ...current, note: event.target.value }))} placeholder="Status update note" value={updateForm.note} />
             <textarea className="min-h-28 rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)] md:col-span-2" onChange={(event) => setUpdateForm((current) => ({ ...current, adminNotes: event.target.value }))} placeholder="Admin notes" value={updateForm.adminNotes} />
           </div>
 
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
-            <Button onClick={saveStatus} variant="primary">Update Status</Button>
+            <Button disabled={isStatusSaving} onClick={saveStatus} variant="primary">{isStatusSaving ? 'Updating...' : 'Update Status'}</Button>
             <Button onClick={savePayment} variant="outline">Update Payment</Button>
-            <Button onClick={saveAll} variant="outline">Save All</Button>
             <Button onClick={() => showToast({ message: 'Invoice printing will be added later.', type: 'info' })} variant="outline">Print Invoice</Button>
             <Button onClick={() => setOrderToArchive(selectedOrder)} variant="outline">Archive</Button>
           </div>
         </section>
       ) : null}
 
+      <ConfirmModal
+        confirmLabel={pendingStatusAction === 'Delivered' ? 'Mark Delivered' : 'Cancel Order'}
+        isOpen={Boolean(pendingStatusAction)}
+        isWorking={isStatusSaving}
+        onCancel={() => setPendingStatusAction(null)}
+        onConfirm={performStatusUpdate}
+        text={pendingStatusAction === 'Delivered' ? 'This will mark the customer order as delivered.' : 'This will cancel the order and stop fulfilment.'}
+        title={pendingStatusAction === 'Delivered' ? 'Mark as Delivered?' : 'Cancel Order?'}
+        tone={pendingStatusAction === 'Cancelled' ? 'danger' : 'warning'}
+      />
       <ConfirmModal
         confirmLabel="Archive Order"
         isOpen={Boolean(orderToArchive)}

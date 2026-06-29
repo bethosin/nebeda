@@ -153,16 +153,39 @@ const paidOrderNotificationEmail = (order) => ({
   ),
 });
 
-const orderStatusUpdateEmail = (order) => ({
-  to: order.customer.email,
-  subject: "Nebeda Threads Order Status Update",
-  ...wrapEmail(
-    "Order Status Update",
-    `<p>Your order status is now <strong>${escapeHtml(order.orderStatus)}</strong>.</p>
-     <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>`
-  ),
-});
+const orderStatusEmailSubjects = {
+  Processing: "Your Nebeda Threads Order Is Being Prepared",
+  Shipped: "Your Nebeda Threads Order Has Been Shipped",
+  Delivered: "Your Nebeda Threads Order Has Been Delivered",
+  Cancelled: "Your Nebeda Threads Order Has Been Cancelled",
+};
 
+const orderStatusUpdateEmail = (order) => {
+  const shipping = order.shipping || {};
+  const trackingDetails = [
+    shipping.trackingCarrier
+      ? `<p><strong>Tracking carrier:</strong> ${escapeHtml(shipping.trackingCarrier)}</p>`
+      : "",
+    shipping.trackingNumber
+      ? `<p><strong>Tracking number:</strong> ${escapeHtml(shipping.trackingNumber)}</p>`
+      : "",
+    shipping.trackingUrl
+      ? `<p><a href="${escapeHtml(shipping.trackingUrl)}" style="color:#be9753;">Track your delivery</a></p>`
+      : "",
+  ].join("");
+
+  return {
+    to: order.customer.email,
+    subject: orderStatusEmailSubjects[order.orderStatus] || "Nebeda Threads Order Status Update",
+    ...wrapEmail(
+      orderStatusEmailSubjects[order.orderStatus] || "Order Status Update",
+      `<p>Hello ${escapeHtml(getFirstName(order.customer.fullName))},</p>
+       <p>Your Nebeda Threads order is now <strong>${escapeHtml(order.orderStatus)}</strong>.</p>
+       <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
+       ${trackingDetails}`,
+    ),
+  };
+};
 const orderPaymentStatusUpdateEmail = (order) => ({
   to: order.customer.email,
   subject: "Nebeda Threads Payment Status Update",

@@ -2,6 +2,16 @@ import mongoose from "mongoose";
 
 const orderStatuses = ["Pending", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled"];
 const paymentStatuses = ["Pending", "Paid", "Failed", "Refunded"];
+
+const statusHistorySchema = new mongoose.Schema(
+  {
+    status: { type: String, enum: orderStatuses, required: true },
+    changedAt: { type: Date, default: Date.now, required: true },
+    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+    note: { type: String, trim: true, maxlength: 1000 },
+  },
+  { _id: false },
+);
 const paymentProviders = ["Stripe", "Manual", "Not Set"];
 
 const orderItemSchema = new mongoose.Schema(
@@ -74,6 +84,8 @@ const shippingSchema = new mongoose.Schema(
     trackingNumber: { type: String, trim: true },
     trackingCarrier: { type: String, trim: true },
     trackingUrl: { type: String, trim: true },
+    dispatchNotes: { type: String, trim: true, maxlength: 2000 },
+    deliveryNotes: { type: String, trim: true, maxlength: 2000 },
     addressLine1: { type: String, required: true, trim: true },
     addressLine2: { type: String, trim: true },
     city: { type: String, required: true, trim: true },
@@ -141,6 +153,11 @@ const orderSchema = new mongoose.Schema(
       default: "GBP",
     },
     paidAt: { type: Date },
+    processingAt: { type: Date },
+    shippedAt: { type: Date },
+    deliveredAt: { type: Date },
+    cancelledAt: { type: Date },
+    statusHistory: { type: [statusHistorySchema], default: [] },
     stripeSessionId: { type: String, trim: true },
     paymentIntentId: { type: String, trim: true },
     paymentFailureReason: { type: String, trim: true, maxlength: 500 },

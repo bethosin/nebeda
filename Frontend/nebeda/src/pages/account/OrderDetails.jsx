@@ -78,7 +78,16 @@ function OrderDetails() {
             ) : null}
           </section>
 
-          <OrderStatusTimeline status={order.orderStatus} />
+          <OrderStatusTimeline
+            cancelledAt={order.cancelledAt}
+            createdAt={order.createdAt}
+            deliveredAt={order.deliveredAt}
+            paidAt={order.paidAt}
+            processingAt={order.processingAt}
+            shippedAt={order.shippedAt}
+            status={order.orderStatus}
+            statusHistory={order.statusHistory}
+          />
 
           <section className="grid gap-5 lg:grid-cols-[1.4fr_0.8fr]">
             <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-6">
@@ -120,8 +129,20 @@ function OrderDetails() {
                     rel="noreferrer"
                     target="_blank"
                   >
-                    Track delivery
+                    Track Delivery
                   </a>
+                ) : null}
+                {['Shipped', 'Delivered'].includes(order.orderStatus) && order.shipping?.dispatchNotes ? (
+                  <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm leading-6 text-[var(--color-muted)]">
+                    <p className="font-semibold text-white">Dispatch notes</p>
+                    <p className="mt-2">{order.shipping.dispatchNotes}</p>
+                  </div>
+                ) : null}
+                {order.orderStatus === 'Delivered' && order.shipping?.deliveryNotes ? (
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm leading-6 text-[var(--color-muted)]">
+                    <p className="font-semibold text-white">Delivery notes</p>
+                    <p className="mt-2">{order.shipping.deliveryNotes}</p>
+                  </div>
                 ) : null}
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-6">

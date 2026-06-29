@@ -176,6 +176,13 @@ const handleCompletedCheckout = async (session) => {
             : session.payment_intent?.id,
         paymentFailureReason: "",
       },
+      $push: {
+        statusHistory: {
+          status: "Confirmed",
+          changedAt: new Date(),
+          note: "Payment confirmed by Stripe.",
+        },
+      },
     },
     { new: true },
   );

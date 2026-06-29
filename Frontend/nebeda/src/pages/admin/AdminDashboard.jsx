@@ -68,6 +68,9 @@ function AdminDashboard() {
     return [
       { label: 'Total Users', value: String(stats.totalUsers ?? 0) },
       { label: 'Total Orders', value: String(stats.totalOrders ?? 0) },
+      { label: 'Processing Orders', value: String(stats.processingOrders ?? 0) },
+      { label: 'Shipped Orders', value: String(stats.shippedOrders ?? 0) },
+      { label: 'Delivered Orders', value: String(stats.deliveredOrders ?? 0) },
       { label: 'Pending Payments', value: String(stats.pendingPayments ?? 0) },
       { label: 'Paid Orders', value: String(stats.paidOrders ?? 0) },
       { label: 'Total Revenue', value: `£${Number(stats.totalRevenue || 0).toFixed(2)}` },

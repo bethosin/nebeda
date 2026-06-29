@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { calculateShipping } from "../config/shipping.js";
 import Order, { orderStatuses, paymentStatuses } from "../models/Order.js";
 import Product from "../models/Product.js";
+import { applyFulfilmentUpdate } from "../utils/orderFulfilment.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
   orderNotificationEmail,
@@ -134,6 +135,7 @@ const createOrder = asyncHandler(async (req, res) => {
       total: subtotal + deliveryFee,
     },
     paymentProvider: "Stripe",
+    statusHistory: [{ status: "Pending", changedAt: new Date(), note: "Order created." }],
   });
 
   const emailResults = await Promise.all([
@@ -282,7 +284,16 @@ const getAdminOrderById = asyncHandler(async (req, res) => {
 });
 
 const updateOrderStatus = asyncHandler(async (req, res) => {
-  const { orderStatus, adminNotes } = req.body;
+  const {
+    orderStatus,
+    adminNotes,
+    trackingNumber,
+    trackingCarrier,
+    trackingUrl,
+    dispatchNotes,
+    deliveryNotes,
+    note,
+  } = req.body;
 
   if (!orderStatuses.includes(orderStatus)) {
     res.status(400);
@@ -296,13 +307,28 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new Error("Order not found.");
   }
 
-  const previousStatus = order.orderStatus;
-  order.orderStatus = orderStatus;
+  let fulfilmentResult;
+  try {
+    fulfilmentResult = applyFulfilmentUpdate(order, {
+      orderStatus,
+      trackingNumber,
+      trackingCarrier,
+      trackingUrl,
+      dispatchNotes,
+      deliveryNotes,
+      note,
+      changedBy: req.admin._id,
+    });
+  } catch (error) {
+    res.status(400);
+    throw error;
+  }
+
   if (adminNotes !== undefined) order.adminNotes = adminNotes;
   await order.save();
 
   const emailResult =
-    previousStatus !== order.orderStatus
+    fulfilmentResult.statusChanged
       ? await sendEmailSafely(orderStatusUpdateEmail(order))
       : null;
 
@@ -385,6 +411,9 @@ const updateAdminOrder = asyncHandler(async (req, res) => {
     trackingNumber,
     trackingCarrier,
     trackingUrl,
+    dispatchNotes,
+    deliveryNotes,
+    note,
   } = req.body;
 
   if (
@@ -396,12 +425,20 @@ const updateAdminOrder = asyncHandler(async (req, res) => {
     throw new Error("The payment provider cannot be changed for a Stripe order.");
   }
 
-  if (orderStatus) {
-    if (!orderStatuses.includes(orderStatus)) {
-      res.status(400);
-      throw new Error(`${orderStatus} is not a valid order status.`);
-    }
-    order.orderStatus = orderStatus;
+  try {
+    applyFulfilmentUpdate(order, {
+      orderStatus: orderStatus || order.orderStatus,
+      trackingNumber,
+      trackingCarrier,
+      trackingUrl,
+      dispatchNotes,
+      deliveryNotes,
+      note,
+      changedBy: req.admin._id,
+    });
+  } catch (error) {
+    res.status(400);
+    throw error;
   }
 
   if (paymentStatus) {
@@ -422,13 +459,6 @@ const updateAdminOrder = asyncHandler(async (req, res) => {
 
   if (paymentProvider) order.paymentProvider = paymentProvider;
   if (adminNotes !== undefined) order.adminNotes = adminNotes;
-  if (trackingUrl && !/^https?:\/\//i.test(trackingUrl)) {
-    res.status(400);
-    throw new Error("Tracking URL must start with http:// or https://.");
-  }
-  if (trackingNumber !== undefined) order.shipping.trackingNumber = trackingNumber;
-  if (trackingCarrier !== undefined) order.shipping.trackingCarrier = trackingCarrier;
-  if (trackingUrl !== undefined) order.shipping.trackingUrl = trackingUrl;
 
   await order.save();
 

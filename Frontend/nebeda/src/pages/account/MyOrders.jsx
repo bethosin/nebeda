@@ -3,6 +3,14 @@ import Button from '../../components/ui/Button'
 import AccountLayout from '../../components/account/AccountLayout'
 import { getMyOrders } from '../../services/accountService'
 
+const statusLabels = {
+  Pending: 'Order Placed',
+  Confirmed: 'Payment Confirmed',
+  Processing: 'Processing',
+  Shipped: 'Shipped',
+  Delivered: 'Delivered',
+  Cancelled: 'Cancelled',
+}
 function formatAmount(value) {
   return `£${Number(value || 0).toFixed(2)}`
 }
@@ -67,6 +75,8 @@ function MyOrders() {
                 <p className="mt-2 text-sm text-[var(--color-muted)]">
                   {order.items?.length || 0} item(s) · {order.orderStatus} · Payment {order.paymentStatus}
                 </p>
+                <p className="mt-2 text-sm font-semibold text-white">Status: {statusLabels[order.orderStatus] || order.orderStatus}</p>
+                {order.shipping?.trackingNumber ? <p className="mt-2 break-all text-xs text-[var(--color-gold)]">Tracking: {order.shipping.trackingNumber}</p> : null}
               </div>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <p className="text-lg font-semibold text-[var(--color-gold)]">
