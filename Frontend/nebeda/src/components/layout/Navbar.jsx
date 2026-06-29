@@ -111,7 +111,7 @@ function Navbar() {
           />
         </Link>
 
-        <div className="hidden min-w-0 items-center gap-5 xl:gap-8 lg:flex">
+        <div className="hidden min-w-0 items-center gap-5 xl:flex xl:gap-7 2xl:gap-8">
           {navLinks.map((link) => (
             <NavLink className={desktopNavClass} key={link.path} to={link.path}>
               {({ isActive }) => (
@@ -129,7 +129,7 @@ function Navbar() {
           ))}
         </div>
 
-        <div className="hidden shrink-0 items-center gap-3 lg:flex">
+        <div className="hidden shrink-0 items-center gap-3 xl:flex">
           <NavLink className={pillNavClass} to="/cart">
             Cart ({totalItems})
           </NavLink>
@@ -179,7 +179,7 @@ function Navbar() {
         <button
           aria-expanded={isOpen}
           aria-label="Toggle navigation menu"
-          className="flex size-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full border border-white/15 text-white transition hover:border-[var(--color-gold)] lg:hidden"
+          className="flex size-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full border border-white/15 text-white transition hover:border-[var(--color-gold)] xl:hidden"
           onClick={() => setIsOpen((current) => !current)}
           type="button"
         >
@@ -190,7 +190,7 @@ function Navbar() {
       </nav>
 
       {isOpen ? (
-        <div className="max-h-[calc(100vh-82px)] overflow-y-auto border-t border-white/10 bg-black/95 px-5 pb-6 pt-3 lg:hidden">
+        <div className="max-h-[calc(100vh-82px)] overflow-y-auto border-t border-white/10 bg-black/95 px-5 pb-6 pt-3 xl:hidden">
           <div className="mx-auto flex max-w-7xl flex-col gap-1">
             {navLinks.map((link) => (
               <NavLink className={mobileNavClass} key={link.path} onClick={closeAll} to={link.path}>

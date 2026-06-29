@@ -127,6 +127,9 @@ function AdminOrders() {
       orderStatus: order.orderStatus || 'Pending',
       paymentStatus: order.paymentStatus || 'Pending',
       paymentProvider: order.paymentProvider || 'Not Set',
+      trackingNumber: order.shipping?.trackingNumber || '',
+      trackingCarrier: order.shipping?.trackingCarrier || '',
+      trackingUrl: order.shipping?.trackingUrl || '',
       adminNotes: order.adminNotes || '',
     })
   }
@@ -287,7 +290,14 @@ function AdminOrders() {
               <p className="font-semibold text-white">Shipping Information</p>
               <p>{selectedOrder.shipping?.addressLine1}</p>
               <p>{selectedOrder.shipping?.city}, {selectedOrder.shipping?.country}</p>
-              <p>{selectedOrder.shipping?.shippingMethod}</p>
+              <p>Method: {selectedOrder.shipping?.shippingMethod || 'Not set'}</p>
+              <p>Cost: {formatAmount(selectedOrder.shipping?.shippingCost ?? selectedOrder.totals?.deliveryFee, selectedOrder.currency)}</p>
+              <p>Region: {selectedOrder.shipping?.shippingRegion || 'Not set'}</p>
+              <p>Carrier: {selectedOrder.shipping?.shippingCarrier || 'Not set'}</p>
+              <p>Estimated delivery: {selectedOrder.shipping?.estimatedDelivery || 'Not set'}</p>
+              <p>Tracking number: {selectedOrder.shipping?.trackingNumber || 'Not assigned'}</p>
+              <p>Tracking carrier: {selectedOrder.shipping?.trackingCarrier || 'Not assigned'}</p>
+              {selectedOrder.shipping?.trackingUrl ? <a className="break-all text-[var(--color-gold)]" href={selectedOrder.shipping.trackingUrl} rel="noreferrer" target="_blank">Open tracking link</a> : null}
             </div>
             <div className="rounded-2xl border border-white/10 p-5 text-sm leading-7 text-[var(--color-muted)]">
               <p className="font-semibold text-white">Stripe Information</p>
@@ -354,6 +364,9 @@ function AdminOrders() {
             <select className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, paymentProvider: event.target.value }))} value={updateForm.paymentProvider}>
               {['Stripe', 'Manual', 'Not Set'].map((item) => <option className="bg-black" key={item}>{item}</option>)}
             </select>
+            <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingNumber: event.target.value }))} placeholder="Tracking number" value={updateForm.trackingNumber} />
+            <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)]" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingCarrier: event.target.value }))} placeholder="Tracking carrier" value={updateForm.trackingCarrier} />
+            <input className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)] md:col-span-2" onChange={(event) => setUpdateForm((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="Tracking URL" type="url" value={updateForm.trackingUrl} />
             <textarea className="min-h-28 rounded-2xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none placeholder:text-white/32 focus:border-[var(--color-gold)] md:col-span-2" onChange={(event) => setUpdateForm((current) => ({ ...current, adminNotes: event.target.value }))} placeholder="Admin notes" value={updateForm.adminNotes} />
           </div>
 

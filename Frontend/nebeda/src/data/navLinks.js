@@ -3,5 +3,6 @@ export const navLinks = [
   { label: 'Shop', path: '/shop' },
   { label: 'Custom Order', path: '/custom-order' },
   { label: 'About', path: '/about' },
+  { label: 'Shipping', path: '/shipping-information' },
   { label: 'Contact', path: '/contact' },
 ]

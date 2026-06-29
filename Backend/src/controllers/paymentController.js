@@ -27,8 +27,8 @@ const getOrderCurrency = (order) => {
   return [...currencies][0] || order.currency || "GBP";
 };
 
-const createLineItems = (order, currency) =>
-  order.items.map((item) => {
+const createLineItems = (order, currency) => {
+  const lineItems = order.items.map((item) => {
     const unitAmount = Math.round(Number(item.numericPrice) * 100);
     if (!Number.isSafeInteger(unitAmount) || unitAmount <= 0) {
       throw new Error(`A valid payment price is required for ${item.name}.`);
@@ -50,6 +50,25 @@ const createLineItems = (order, currency) =>
       quantity: item.quantity,
     };
   });
+
+  const shippingCost = Number(order.shipping?.shippingCost ?? order.totals?.deliveryFee ?? 0);
+
+  if (shippingCost > 0) {
+    lineItems.push({
+      price_data: {
+        currency: currency.toLowerCase(),
+        product_data: {
+          name: order.shipping?.shippingMethod || "Shipping",
+          description: order.shipping?.estimatedDelivery || undefined,
+        },
+        unit_amount: Math.round(shippingCost * 100),
+      },
+      quantity: 1,
+    });
+  }
+
+  return lineItems;
+};
 
 const getReusableSession = async (stripe, order) => {
   if (!order.stripeSessionId) return null;

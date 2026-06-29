@@ -1,5 +1,5 @@
 const email = 'nebeda33@gmail.com'
-const whatsappNumber = '+447448668759'
+const whatsappNumber = '+44 7448 668759'
 const whatsappLink = 'https://wa.me/message/3K25B5XWBN73J1'
 const instagramUrl =
   'https://www.instagram.com/nebeda_threads_luxury_fashion?igsh=OXBjZzZocjVqY2F4&utm_source=qr'

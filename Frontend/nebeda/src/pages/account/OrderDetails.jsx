@@ -107,6 +107,22 @@ function OrderDetails() {
                   {order.shipping?.postcode}<br />
                   {order.shipping?.country}
                 </p>
+                <dl className="mt-5 grid gap-3 border-t border-white/10 pt-5 text-sm">
+                  <div className="flex justify-between gap-4"><dt className="text-[var(--color-muted)]">Method</dt><dd className="text-right text-white">{order.shipping?.shippingMethod || 'Not set'}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-[var(--color-muted)]">Estimated delivery</dt><dd className="text-right text-white">{order.shipping?.estimatedDelivery || 'Not set'}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-[var(--color-muted)]">Carrier</dt><dd className="text-right text-white">{order.shipping?.trackingCarrier || order.shipping?.shippingCarrier || 'Not assigned'}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-[var(--color-muted)]">Tracking number</dt><dd className="break-all text-right text-white">{order.shipping?.trackingNumber || 'Not available'}</dd></div>
+                </dl>
+                {order.shipping?.trackingUrl ? (
+                  <a
+                    className="mt-5 inline-flex text-sm font-semibold text-[var(--color-gold)] transition hover:text-[var(--color-gold-light)]"
+                    href={order.shipping.trackingUrl}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Track delivery
+                  </a>
+                ) : null}
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-6">
                 <h3 className="font-serif text-2xl text-white">Totals</h3>

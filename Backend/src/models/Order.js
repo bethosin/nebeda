@@ -67,6 +67,13 @@ const shippingSchema = new mongoose.Schema(
   {
     shippingCountry: { type: String, required: true, trim: true },
     shippingMethod: { type: String, trim: true },
+    shippingCarrier: { type: String, trim: true },
+    shippingCost: { type: Number, default: 0, min: 0 },
+    shippingRegion: { type: String, trim: true },
+    estimatedDelivery: { type: String, trim: true },
+    trackingNumber: { type: String, trim: true },
+    trackingCarrier: { type: String, trim: true },
+    trackingUrl: { type: String, trim: true },
     addressLine1: { type: String, required: true, trim: true },
     addressLine2: { type: String, trim: true },
     city: { type: String, required: true, trim: true },

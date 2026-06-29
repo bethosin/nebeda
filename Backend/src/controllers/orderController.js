@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+import { calculateShipping } from "../config/shipping.js";
 import Order, { orderStatuses, paymentStatuses } from "../models/Order.js";
 import Product from "../models/Product.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -99,13 +100,34 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-  const deliveryFee = 0;
+  const currency = [...orderCurrencies][0] || "GBP";
+  const shippingResult = calculateShipping({
+    country: payload.shipping.shippingCountry || payload.shipping.country,
+    subtotal,
+    requestedMethod: payload.shipping.shippingMethod,
+    currency,
+  });
+
+  if (!shippingResult.supported || shippingResult.quoteRequired || !shippingResult.quote) {
+    res.status(400);
+    throw new Error("Shipping quote required.");
+  }
+
+  const shipping = {
+    ...payload.shipping,
+    shippingMethod: shippingResult.quote.shippingMethod,
+    shippingCarrier: shippingResult.quote.shippingCarrier,
+    shippingCost: shippingResult.quote.shippingCost,
+    shippingRegion: shippingResult.quote.shippingRegion,
+    estimatedDelivery: shippingResult.quote.estimatedDelivery,
+  };
+  const deliveryFee = shippingResult.quote.shippingCost;
   const order = await Order.create({
     user: req.user._id,
     customer: payload.customer,
-    shipping: payload.shipping,
+    shipping,
     items,
-    currency: [...orderCurrencies][0] || "GBP",
+    currency,
     totals: {
       subtotal,
       deliveryFee,
@@ -355,7 +377,15 @@ const updateAdminOrder = asyncHandler(async (req, res) => {
 
   const previousStatus = order.orderStatus;
   const previousPaymentStatus = order.paymentStatus;
-  const { orderStatus, paymentStatus, paymentProvider, adminNotes } = req.body;
+  const {
+    orderStatus,
+    paymentStatus,
+    paymentProvider,
+    adminNotes,
+    trackingNumber,
+    trackingCarrier,
+    trackingUrl,
+  } = req.body;
 
   if (
     order.paymentProvider === "Stripe" &&
@@ -392,6 +422,13 @@ const updateAdminOrder = asyncHandler(async (req, res) => {
 
   if (paymentProvider) order.paymentProvider = paymentProvider;
   if (adminNotes !== undefined) order.adminNotes = adminNotes;
+  if (trackingUrl && !/^https?:\/\//i.test(trackingUrl)) {
+    res.status(400);
+    throw new Error("Tracking URL must start with http:// or https://.");
+  }
+  if (trackingNumber !== undefined) order.shipping.trackingNumber = trackingNumber;
+  if (trackingCarrier !== undefined) order.shipping.trackingCarrier = trackingCarrier;
+  if (trackingUrl !== undefined) order.shipping.trackingUrl = trackingUrl;
 
   await order.save();
 

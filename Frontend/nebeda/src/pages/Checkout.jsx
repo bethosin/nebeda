@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import { useCart } from '../context/cartContextValue'
@@ -6,15 +6,9 @@ import { useToast } from '../components/ui/toastContext'
 import { createOrder } from '../services/orderService'
 import { createCheckoutSession } from '../services/paymentService'
 import { subscribeNewsletter } from '../services/newsletterService'
+import { getShippingOptions, getShippingQuote } from '../services/shippingService'
 import { getStoredUser, isUserAuthenticated } from '../services/userAuthService'
 import logEmailWarning from '../utils/emailDiagnostics'
-
-const shippingCountries = ['United Kingdom', 'Nigeria', 'Other']
-const shippingMethods = {
-  'United Kingdom': ['UK Standard Delivery', 'UK Express Delivery'],
-  Nigeria: ['Nigeria Standard Delivery', 'Nigeria Express Delivery'],
-  Other: ['Worldwide Delivery Enquiry'],
-}
 
 function formatAmount(value) {
   return `£${Number(value || 0).toFixed(2)}`
@@ -27,7 +21,7 @@ function getInitialForm() {
     email: user?.email || '',
     whatsappNumber: user?.whatsappNumber || '',
     shippingCountry: 'United Kingdom',
-    shippingMethod: 'UK Standard Delivery',
+    shippingMethod: 'UK_STANDARD',
     addressLine1: '',
     addressLine2: '',
     city: '',
@@ -45,12 +39,65 @@ function Checkout() {
   const [newsletterOptIn, setNewsletterOptIn] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [createdOrder, setCreatedOrder] = useState(null)
+  const [shippingCatalog, setShippingCatalog] = useState(null)
+  const [shippingQuote, setShippingQuote] = useState(null)
+  const [shippingError, setShippingError] = useState('')
+  const [isShippingLoading, setIsShippingLoading] = useState(true)
   const userLoggedIn = isUserAuthenticated()
+  const shippingCountries = shippingCatalog?.countries || ['United Kingdom']
+  const selectedShipping = shippingQuote?.quote || null
+  const availableShippingMethods = shippingQuote?.options || []
+  const shippingQuoteRequired = Boolean(shippingQuote?.quoteRequired)
+  const shippingCost = Number(selectedShipping?.shippingCost || 0)
+  const checkoutTotal = Number(subtotal || 0) + shippingCost
 
-  const availableShippingMethods = useMemo(
-    () => shippingMethods[formData.shippingCountry] || shippingMethods.Other,
-    [formData.shippingCountry],
-  )
+  useEffect(() => {
+    let active = true
+
+    getShippingOptions()
+      .then((data) => {
+        if (active) setShippingCatalog(data)
+      })
+      .catch((error) => {
+        if (active) setShippingError(error.message || 'Shipping options are unavailable.')
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+
+    getShippingQuote({
+      country: formData.shippingCountry,
+      subtotal,
+      shippingMethod: formData.shippingMethod,
+      currency: 'GBP',
+    })
+      .then((data) => {
+        if (!active) return
+        setShippingQuote(data)
+        const methodCode = data.quote?.methodCode || ''
+        setShippingError('')
+        if (methodCode && methodCode !== formData.shippingMethod) {
+          setFormData((current) => ({ ...current, shippingMethod: methodCode }))
+        }
+      })
+      .catch((error) => {
+        if (!active) return
+        setShippingQuote(null)
+        setShippingError(error.message || 'Unable to calculate shipping.')
+      })
+      .finally(() => {
+        if (active) setIsShippingLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [formData.shippingCountry, formData.shippingMethod, subtotal])
 
   if (!cartItems.length && !createdOrder) {
     return <Navigate replace to="/cart" />
@@ -58,13 +105,15 @@ function Checkout() {
 
   const updateField = (event) => {
     const { name, value } = event.target
+    if (name === 'shippingCountry' || name === 'shippingMethod') {
+      setIsShippingLoading(true)
+      setShippingError('')
+    }
     setFormData((current) => {
       const next = { ...current, [name]: value }
       if (name === 'shippingCountry') {
-        next.shippingMethod = shippingMethods[value]?.[0] || ''
-        if (value === 'United Kingdom') next.country = 'United Kingdom'
-        if (value === 'Nigeria') next.country = 'Nigeria'
-        if (value === 'Other') next.country = ''
+        next.shippingMethod = ''
+        next.country = value === 'Other' ? '' : value
       }
       return next
     })
@@ -89,6 +138,12 @@ function Checkout() {
 
     if (formData.email && !/^\S+@\S+\.\S+$/.test(formData.email.trim())) {
       nextErrors.email = 'Please enter a valid email address.'
+    }
+
+    if (isShippingLoading || !selectedShipping || shippingQuoteRequired || shippingError) {
+      nextErrors.shippingCountry = shippingQuoteRequired
+        ? 'Please contact Nebeda Threads for a shipping quotation.'
+        : 'Please wait for a valid shipping quote.'
     }
 
     setErrors(nextErrors)
@@ -289,21 +344,47 @@ function Checkout() {
                       ))}
                     </select>
                   </label>
-                  <label className="block">
+                  <div className="block">
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/58">
                       Shipping Method
                     </span>
-                    <select
-                      className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-[var(--color-gold)]"
-                      name="shippingMethod"
-                      onChange={updateField}
-                      value={formData.shippingMethod}
-                    >
-                      {availableShippingMethods.map((method) => (
-                        <option className="bg-black" key={method}>{method}</option>
-                      ))}
-                    </select>
-                  </label>
+                    {shippingQuoteRequired ? (
+                      <div className="mt-3 rounded-2xl border border-[rgba(190,151,83,0.38)] bg-[rgba(190,151,83,0.08)] px-5 py-4 text-sm leading-6 text-[var(--color-gold-light)]">
+                        Please contact Nebeda Threads for a shipping quotation.
+                      </div>
+                    ) : availableShippingMethods.length > 1 ? (
+                      <select
+                        className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-[var(--color-gold)]"
+                        name="shippingMethod"
+                        onChange={updateField}
+                        value={formData.shippingMethod}
+                      >
+                        {availableShippingMethods.map((method) => (
+                          <option className="bg-black" key={method.methodCode} value={method.methodCode}>
+                            {method.shippingMethod} - {formatAmount(method.shippingCost)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="mt-3 rounded-2xl border border-white/10 bg-black/40 px-5 py-4">
+                        <p className="font-medium text-white">
+                          {isShippingLoading
+                            ? 'Calculating shipping...'
+                            : selectedShipping?.shippingMethod || 'Shipping unavailable'}
+                        </p>
+                        {selectedShipping ? (
+                          <p className="mt-1 text-sm leading-6 text-white/58">
+                            {shippingCost === 0 ? 'Free' : formatAmount(shippingCost)}
+                            {' - '}
+                            {selectedShipping.estimatedDelivery}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                    {shippingError ? (
+                      <p className="mt-2 text-sm text-[var(--color-gold-light)]">{shippingError}</p>
+                    ) : null}
+                  </div>
                 </div>
               </section>
 
@@ -368,10 +449,21 @@ function Checkout() {
               <div className="mt-6 space-y-4 border-t border-white/10 pt-6">
                 <div className="flex justify-between text-sm"><span className="text-white/58">Products</span><span>{totalItems}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-white/58">Subtotal</span><span>{formatAmount(subtotal)}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-white/58">Delivery</span><span>Calculated later</span></div>
-                <div className="flex justify-between text-base font-semibold"><span>Total</span><span className="text-[var(--color-gold)]">{formatAmount(subtotal)}</span></div>
+                <div className="flex items-start justify-between gap-4 text-sm">
+                  <span className="text-white/58">Delivery</span>
+                  <span className="text-right">
+                    {shippingQuoteRequired
+                      ? 'Quote required'
+                      : isShippingLoading
+                        ? 'Calculating...'
+                        : shippingCost === 0
+                          ? 'Free'
+                          : formatAmount(shippingCost)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-base font-semibold"><span>Total</span><span className="text-[var(--color-gold)]">{formatAmount(checkoutTotal)}</span></div>
               </div>
-              <Button className="mt-7 w-full" disabled={isSubmitting} type="submit" variant="primary">
+              <Button className="mt-7 w-full" disabled={isSubmitting || isShippingLoading || shippingQuoteRequired || !selectedShipping} type="submit" variant="primary">
                 {isSubmitting ? 'Preparing Secure Payment...' : 'Proceed to Secure Payment'}
               </Button>
             </aside>

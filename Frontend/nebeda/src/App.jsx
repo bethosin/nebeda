@@ -32,6 +32,7 @@ import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import Shop from './pages/Shop'
 import NotFound from './pages/NotFound'
+import ShippingInformation from './pages/ShippingInformation'
 import PrivacyPolicy from './pages/legal/PrivacyPolicy'
 import ShippingReturns from './pages/legal/ShippingReturns'
 import Terms from './pages/legal/Terms'
@@ -73,6 +74,7 @@ function App() {
               <Route element={<About />} path="/about" />
               <Route element={<Contact />} path="/contact" />
               <Route element={<PrivacyPolicy />} path="/privacy-policy" />
+              <Route element={<ShippingInformation />} path="/shipping-information" />
               <Route element={<Terms />} path="/terms" />
               <Route element={<ShippingReturns />} path="/shipping-returns" />
               <Route element={<AdminLogin />} path="/admin/login" />
