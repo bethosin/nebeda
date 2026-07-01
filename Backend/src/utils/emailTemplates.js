@@ -39,6 +39,7 @@ const actionButton = (label, url) =>
 
 const emailVerificationEmail = (user, verificationUrl) => ({
   to: user.email,
+  relatedUser: user._id,
   subject: "Verify Your Nebeda Threads Email",
   template: "email-verification",
   ...wrapEmail(
@@ -52,6 +53,7 @@ const emailVerificationEmail = (user, verificationUrl) => ({
 
 const passwordResetEmail = (user, resetUrl) => ({
   to: user.email,
+  relatedUser: user._id,
   subject: "Reset Your Nebeda Threads Password",
   template: "password-reset",
   ...wrapEmail(
@@ -65,6 +67,7 @@ const passwordResetEmail = (user, resetUrl) => ({
 const welcomeEmail = (user) => ({
   template: "welcome",
   to: user.email,
+  relatedUser: user._id,
   subject: "Welcome to Nebeda Threads",
   ...wrapEmail(
     "Welcome to Nebeda Threads",
@@ -76,6 +79,7 @@ const welcomeEmail = (user) => ({
 const newSignupNotificationEmail = (user) => ({
   template: "new-signup-notification",
   to: brandEmail(),
+  relatedUser: user._id,
   subject: "New Nebeda Threads Customer Signup",
   ...wrapEmail(
     "New Nebeda Threads Customer Signup",
@@ -89,6 +93,7 @@ const newSignupNotificationEmail = (user) => ({
 const customOrderConfirmationEmail = (order) => ({
   template: "custom-order-received",
   to: order.email,
+  relatedCustomOrder: order._id,
   subject: "Custom Order Request Received",
   ...wrapEmail(
     "Custom Order Request Received",
@@ -101,6 +106,7 @@ const customOrderConfirmationEmail = (order) => ({
 const customOrderNotificationEmail = (order) => ({
   template: "custom-order-notification",
   to: brandEmail(),
+  relatedCustomOrder: order._id,
   subject: "New Nebeda Threads Custom Order",
   ...wrapEmail(
     "New Custom Order Request",
@@ -140,6 +146,7 @@ const enquiryNotificationEmail = (enquiry) => ({
 const orderReceivedEmail = (order) => ({
   template: "order-placed",
   to: order.customer.email,
+  relatedOrder: order._id,
   subject: "Nebeda Threads Order Received",
   ...wrapEmail(
     "Order Received",
@@ -153,6 +160,7 @@ const orderReceivedEmail = (order) => ({
 const orderNotificationEmail = (order) => ({
   template: "new-order-notification",
   to: brandEmail(),
+  relatedOrder: order._id,
   subject: "New Nebeda Threads Cart Order",
   ...wrapEmail(
     "New Cart Order",
@@ -167,6 +175,7 @@ const orderNotificationEmail = (order) => ({
 const paymentConfirmationEmail = (order) => ({
   template: "payment-received",
   to: order.customer.email,
+  relatedOrder: order._id,
   subject: "Nebeda Threads Payment Confirmation",
   ...wrapEmail(
     "Payment Confirmed",
@@ -179,6 +188,7 @@ const paymentConfirmationEmail = (order) => ({
 
 const paymentFailedEmail = (order) => ({
   to: order.customer.email,
+  relatedOrder: order._id,
   subject: "Nebeda Threads Payment Could Not Be Completed",
   template: "payment-failed",
   ...wrapEmail(
@@ -193,6 +203,7 @@ const paymentFailedEmail = (order) => ({
 const paidOrderNotificationEmail = (order) => ({
   template: "paid-order-notification",
   to: brandEmail(),
+  relatedOrder: order._id,
   subject: "Paid Nebeda Threads Order",
   ...wrapEmail(
     "Order Payment Received",
@@ -227,6 +238,7 @@ const orderStatusUpdateEmail = (order) => {
 
   return {
     to: order.customer.email,
+    relatedOrder: order._id,
     subject: orderStatusEmailSubjects[order.orderStatus] || "Nebeda Threads Order Status Update",
     ...wrapEmail(
       orderStatusEmailSubjects[order.orderStatus] || "Order Status Update",
@@ -240,6 +252,7 @@ const orderStatusUpdateEmail = (order) => {
 const orderPaymentStatusUpdateEmail = (order) => ({
   template: "payment-status-update",
   to: order.customer.email,
+  relatedOrder: order._id,
   subject: "Nebeda Threads Payment Status Update",
   ...wrapEmail(
     "Payment Status Update",
@@ -250,6 +263,7 @@ const orderPaymentStatusUpdateEmail = (order) => ({
 
 const customOrderQuoteReadyEmail = (order) => ({
   to: order.email,
+  relatedCustomOrder: order._id,
   subject: "Your Nebeda Threads Custom Order Quote Is Ready",
   template: "custom-order-quote-ready",
   ...wrapEmail(
@@ -262,9 +276,37 @@ const customOrderQuoteReadyEmail = (order) => ({
      <p>We will confirm the final design, delivery, and payment details with you before production.</p>`
   ),
 });
+const customOrderPaymentReceivedEmail = (order) => ({
+  to: order.email,
+  relatedCustomOrder: order._id,
+  subject: "Nebeda Threads Custom Order Payment Received",
+  template: "custom-order-payment-received",
+  ...wrapEmail(
+    "Custom Order Payment Received",
+    `<p>Hello ${escapeHtml(getFirstName(order.fullName))},</p>
+     <p>Your payment has been received and your bespoke order can now move into production.</p>
+     <p><strong>Reference:</strong> ${escapeHtml(order._id)}</p>
+     <p><strong>Amount paid:</strong> £${Number(order.estimatedPrice || 0).toFixed(2)}</p>
+     ${actionButton("View Custom Order", "https://nebedathreads.co.uk/account/custom-orders/" + order._id)}`
+  ),
+});
+
+const customOrderPaidNotificationEmail = (order) => ({
+  to: brandEmail(),
+  relatedCustomOrder: order._id,
+  subject: "Paid Nebeda Threads Custom Order",
+  template: "custom-order-paid-notification",
+  ...wrapEmail(
+    "Custom Order Payment Received",
+    `<p><strong>Customer:</strong> ${escapeHtml(order.fullName)}</p>
+     <p><strong>Reference:</strong> ${escapeHtml(order._id)}</p>
+     <p><strong>Amount:</strong> £${Number(order.estimatedPrice || 0).toFixed(2)}</p>`
+  ),
+});
 const customOrderStatusUpdateEmail = (order) => ({
   template: "custom-order-status",
   to: order.email,
+  relatedCustomOrder: order._id,
   subject: "Nebeda Threads Custom Order Update",
   ...wrapEmail(
     "Custom Order Update",
@@ -277,6 +319,7 @@ const customOrderStatusUpdateEmail = (order) => ({
 const customOrderPaymentStatusUpdateEmail = (order) => ({
   template: "custom-order-payment-status",
   to: order.email,
+  relatedCustomOrder: order._id,
   subject: "Nebeda Threads Custom Order Payment Update",
   ...wrapEmail(
     "Custom Order Payment Update",
@@ -316,6 +359,8 @@ export {
   customOrderConfirmationEmail,
   emailVerificationEmail,
   customOrderNotificationEmail,
+  customOrderPaidNotificationEmail,
+  customOrderPaymentReceivedEmail,
   customOrderPaymentStatusUpdateEmail,
   customOrderQuoteReadyEmail,
   customOrderStatusUpdateEmail,

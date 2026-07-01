@@ -37,6 +37,9 @@ const configuredOrigins = [process.env.CLIENT_URL, process.env.FRONTEND_URL]
   .map((value) => value.trim().replace(/\/$/, ""))
   .filter(Boolean);
 const allowedOrigins = new Set(["https://nebedathreads.co.uk", ...configuredOrigins]);
+if (process.env.NODE_ENV !== "production") {
+  allowedOrigins.add("http://localhost:5173");
+}
 
 app.set("trust proxy", 1);
 

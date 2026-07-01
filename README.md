@@ -165,3 +165,6 @@ This project is licensed under the MIT License. See `LICENSE`.
 Customer accounts use hashed passwords, JWT-protected account routes, verified-email checkout gating, expiring hashed email-verification tokens, and one-hour hashed password-reset tokens. Transactional mail is delivered by Resend from the verified `nebedathreads.co.uk` domain, with delivery outcomes available to administrators under Email Logs.
 
 Required production email variables include `RESEND_API_KEY`, `EMAIL_FROM_NAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_REPLY_TO`, and `BRAND_NOTIFICATION_EMAIL`. Keep every value in the ignored `Backend/.env` file locally and in Render environment settings in production.
+### Launch state
+
+The application supports verified customer accounts, password recovery, backend-priced shop checkout, webhook-confirmed Stripe payments, approved bespoke quote payments, order fulfilment tracking, and Resend delivery logs. Production launch requires replacing the Render Stripe test secret/webhook secret with live values, registering the live webhook endpoint, redeploying, and completing a final live transaction smoke test.

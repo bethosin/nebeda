@@ -160,3 +160,10 @@ Authorization: Bearer <token>
 Stripe Checkout, verified webhooks, server-calculated shipping, and order
 fulfilment tracking are implemented. Production provider keys, webhook
 monitoring, and payment reconciliation remain deployment responsibilities.
+## Production ecommerce flows
+
+- Customer checkout and approved custom-order quotes use backend-created Stripe Checkout sessions.
+- Stripe webhooks are the only code path that confirms payment.
+- Custom-order requests collect design details first; delivery and payment follow an admin-approved quote.
+- Every Resend attempt is recorded as Pending, Sent, or Failed. Protected admins can filter and retry failed messages.
+- Customer checkout and custom quote payment require a logged-in customer with a verified email address.

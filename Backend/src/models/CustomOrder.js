@@ -55,26 +55,22 @@ const shippingSchema = new mongoose.Schema(
   {
     shippingCountry: {
       type: String,
-      required: [true, "Shipping country is required"],
       enum: shippingCountries,
     },
     shippingMethod: { type: String, trim: true },
     addressLine1: {
       type: String,
-      required: [true, "Address line 1 is required"],
       trim: true,
     },
     addressLine2: { type: String, trim: true },
     city: {
       type: String,
-      required: [true, "City is required"],
       trim: true,
     },
     stateCounty: { type: String, trim: true },
     postcode: { type: String, trim: true },
     country: {
       type: String,
-      required: [true, "Country is required"],
       trim: true,
     },
   },
@@ -123,6 +119,7 @@ const customOrderSchema = new mongoose.Schema(
     },
     fabricPreference: { type: String, trim: true },
     occasion: { type: String, trim: true },
+    deadline: { type: Date },
     styleNotes: { type: String, trim: true },
     measurements: {
       type: measurementsSchema,
@@ -130,7 +127,7 @@ const customOrderSchema = new mongoose.Schema(
     },
     shipping: {
       type: shippingSchema,
-      required: true,
+      required: false,
     },
     inspirationImages: {
       type: [imageSchema],
@@ -152,6 +149,9 @@ const customOrderSchema = new mongoose.Schema(
       default: "Not Set",
     },
     estimatedPrice: { type: String, trim: true },
+    stripeSessionId: { type: String, trim: true },
+    paymentIntentId: { type: String, trim: true },
+    paidAt: { type: Date },
     adminNotes: { type: String, trim: true },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,

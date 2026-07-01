@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom'
-import NewsletterSignup from '../common/NewsletterSignup'
 import { navLinks } from '../../data/navLinks'
 import { email, instagramHandle, instagramUrl, whatsappLink, whatsappNumber } from '../../data/contactDetails'
 
 function Footer() {
   return (
     <footer className="border-t border-white/10 bg-black px-5 py-14 text-white sm:px-8 lg:px-10">
-      <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.1fr_0.8fr_0.9fr_1.2fr]">
+      <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.2fr_0.8fr_1fr]">
         <div>
           <p className="font-serif text-3xl">Nebeda Threads</p>
           <p className="mt-2 text-xs font-semibold uppercase tracking-[0.32em] text-[var(--color-gold)]">
@@ -59,10 +58,6 @@ function Footer() {
             </a>
             <p>United Kingdom, worldwide delivery</p>
           </div>
-        </div>
-
-        <div className="md:col-span-4 lg:col-span-1">
-          <NewsletterSignup compact source="Footer" />
         </div>
       </div>
 

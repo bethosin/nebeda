@@ -1,12 +1,18 @@
+import { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import AccountSidebar from './AccountSidebar'
 import AccountTopbar from './AccountTopbar'
-import { isUserAuthenticated } from '../../services/userAuthService'
+import { getCurrentUser, isUserAuthenticated } from '../../services/userAuthService'
 
 function AccountLayout({ children }) {
   const location = useLocation()
+  const authenticated = isUserAuthenticated()
 
-  if (!isUserAuthenticated()) {
+  useEffect(() => {
+    if (authenticated) getCurrentUser().catch(() => {})
+  }, [authenticated])
+
+  if (!authenticated) {
     return <Navigate replace to={`/login?redirect=${encodeURIComponent(location.pathname)}`} />
   }
 

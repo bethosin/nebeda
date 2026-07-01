@@ -7,4 +7,11 @@ function createCheckoutSession(orderId) {
   })
 }
 
-export { createCheckoutSession }
+function createCustomOrderCheckoutSession(customOrderId) {
+  return apiRequest('/payments/create-custom-order-checkout-session', {
+    body: { customOrderId },
+    method: 'POST',
+  })
+}
+
+export { createCheckoutSession, createCustomOrderCheckoutSession }

@@ -2,20 +2,23 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Button from '../../components/ui/Button'
 import { useToast } from '../../components/ui/toastContext'
-import { createCheckoutSession } from '../../services/paymentService'
+import { createCheckoutSession, createCustomOrderCheckoutSession } from '../../services/paymentService'
 
 function PaymentCancel() {
   const [searchParams] = useSearchParams()
   const { showToast } = useToast()
   const [isRedirecting, setIsRedirecting] = useState(false)
   const orderId = searchParams.get('orderId')
+  const customOrderId = searchParams.get('customOrderId')
 
   const completePayment = async () => {
-    if (!orderId) return
+    if (!orderId && !customOrderId) return
     setIsRedirecting(true)
 
     try {
-      const data = await createCheckoutSession(orderId)
+      const data = customOrderId
+        ? await createCustomOrderCheckoutSession(customOrderId)
+        : await createCheckoutSession(orderId)
       if (!data.checkoutUrl) throw new Error('Stripe Checkout URL is unavailable.')
       window.location.assign(data.checkoutUrl)
     } catch (error) {
@@ -35,12 +38,12 @@ function PaymentCancel() {
           Your payment was not completed. Your order is still pending.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row sm:flex-wrap">
-          {orderId ? (
+          {orderId || customOrderId ? (
             <Button disabled={isRedirecting} onClick={completePayment} variant="primary">
               {isRedirecting ? 'Opening Secure Payment...' : 'Complete Payment'}
             </Button>
           ) : null}
-          <Button to="/cart" variant="outline">View Cart</Button>
+          <Button to={customOrderId ? '/account/custom-orders' : '/account/orders'} variant="outline">View My Orders</Button>
           <Button to="/shop" variant="outline">Continue Shopping</Button>
         </div>
       </section>

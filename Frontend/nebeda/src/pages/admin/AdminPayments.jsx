@@ -45,14 +45,14 @@ function AdminPayments() {
     return [
       { label: 'Pending Payments', value: String(pending) },
       { label: 'Paid Orders', value: String(paid) },
-      { label: 'Stripe Status', value: 'Pending' },
+      { label: 'Stripe Checkout', value: 'Active' },
     ]
   }, [orders])
 
-  const pendingOrders = orders.filter((order) => order.paymentStatus === 'Pending')
+  const pendingOrders = orders.filter((order) => ['Pending', 'Failed'].includes(order.paymentStatus))
 
   return (
-    <AdminLayout subtitle="Payment readiness view. Stripe will be connected in a later backend stage.">
+    <AdminLayout subtitle="Monitor pending and paid bespoke quotations. Shop-order payments remain available under Orders.">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--color-gold)]">
           Payments
@@ -92,11 +92,11 @@ function AdminPayments() {
 
         <section className="rounded-[1.5rem] border border-[rgba(190,151,83,0.38)] bg-[rgba(190,151,83,0.08)] p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">
-            Stripe Setup Notice
+            Payment Security
           </p>
-          <h3 className="mt-4 font-serif text-3xl text-white">Stripe Integration Status: Pending Setup</h3>
+          <h3 className="mt-4 font-serif text-3xl text-white">Stripe Checkout and webhooks are active</h3>
           <p className="mt-5 text-base leading-8 text-[var(--color-muted)]">
-            Stripe Checkout will be connected through secure backend routes later. No payment logic is active yet.
+            Checkout sessions are created by the backend. Only verified Stripe webhook events mark orders as paid.
           </p>
         </section>
       </div>

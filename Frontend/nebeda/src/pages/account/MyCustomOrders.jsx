@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import AccountLayout from '../../components/account/AccountLayout'
 import Button from '../../components/ui/Button'
 import { getMyCustomOrders } from '../../services/accountService'
+import formatOrderReference from '../../utils/orderReference'
 
 function formatDate(value) {
   if (!value) return 'Not set'
@@ -53,7 +54,7 @@ function MyCustomOrders() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-gold)]">
-                  {order.orderType} · {order.shipping?.shippingCountry}
+                  {formatOrderReference(order._id, 'NTC')} · {order.orderType}
                 </p>
                 <h3 className="mt-3 font-serif text-2xl text-white">{order.outfitType}</h3>
                 <p className="mt-2 text-sm text-[var(--color-muted)]">

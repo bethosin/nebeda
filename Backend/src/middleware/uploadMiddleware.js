@@ -31,13 +31,15 @@ const handleUploadErrors = (err, _req, res, next) => {
     return;
   }
 
-  if (err instanceof multer.MulterError) {
+  if (
+    err instanceof multer.MulterError ||
+    /image files are allowed|jpeg|jpg|png|webp/i.test(err.message || "")
+  ) {
     res.status(400);
     next(new Error(err.message));
     return;
   }
 
-  res.status(400);
   next(err);
 };
 

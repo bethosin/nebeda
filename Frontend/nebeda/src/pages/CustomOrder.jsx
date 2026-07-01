@@ -5,6 +5,7 @@ import { useToast } from '../components/ui/toastContext'
 import { createCustomOrder } from '../services/customOrderService'
 import logEmailWarning from '../utils/emailDiagnostics'
 import { getWhatsAppMessageLink } from '../data/contactDetails'
+import { isUserAuthenticated } from '../services/userAuthService'
 
 const processSteps = [
   {
@@ -45,14 +46,8 @@ const selectOptions = {
   orderType: ['Ready to Wear', 'Bespoke', 'Wedding'],
   fabricPreference: ['Ankara', 'Aso Oke', 'Lace', 'Senator Fabric', 'Plain Fabric', 'I need guidance'],
   occasion: ['Wedding', 'Birthday', 'Church', 'Engagement', 'Graduation', 'Casual Luxury', 'Other'],
-  shippingCountry: ['United Kingdom', 'Nigeria', 'Other'],
 }
 
-const shippingMethods = {
-  'United Kingdom': ['UK Standard Delivery', 'UK Express Delivery'],
-  Nigeria: ['Nigeria Standard Delivery', 'Nigeria Express Delivery'],
-  Other: ['Worldwide Delivery Enquiry'],
-}
 
 const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 const maxInspirationImages = 3
@@ -68,10 +63,6 @@ const requiredFields = [
   'gender',
   'outfitType',
   'orderType',
-  'shippingCountry',
-  'addressLine1',
-  'city',
-  'country',
 ]
 
 const initialFormData = {
@@ -92,15 +83,8 @@ const initialFormData = {
   trouserSkirtLength: '',
   height: '',
   additionalNotes: '',
-  shippingCountry: '',
-  shippingMethod: '',
-  addressLine1: '',
-  addressLine2: '',
-  city: '',
-  stateCounty: '',
-  postcode: '',
-  country: '',
   inspirationImages: [],
+  deadline: '',
   styleNotes: '',
 }
 
@@ -111,10 +95,6 @@ const fieldLabels = {
   gender: 'Gender',
   outfitType: 'Outfit Type',
   orderType: 'Order Type',
-  shippingCountry: 'Shipping Country',
-  addressLine1: 'Address Line 1',
-  city: 'City',
-  country: 'Country',
 }
 
 function TextField({
@@ -209,6 +189,7 @@ function ProcessCard({ step, index }) {
 }
 
 function CustomOrder() {
+  const userLoggedIn = isUserAuthenticated()
   const { showToast } = useToast()
   const [formData, setFormData] = useState(initialFormData)
   const [errors, setErrors] = useState({})
@@ -216,10 +197,6 @@ function CustomOrder() {
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const availableShippingMethods = useMemo(() => {
-    if (!formData.shippingCountry) return []
-    return shippingMethods[formData.shippingCountry] || shippingMethods.Other
-  }, [formData.shippingCountry])
 
   const imagePreviews = useMemo(
     () =>
@@ -275,11 +252,6 @@ function CustomOrder() {
     setFormData((current) => {
       const next = { ...current, [name]: value }
 
-      if (name === 'shippingCountry') {
-        next.shippingMethod = shippingMethods[value]?.[0] || ''
-        if (value === 'United Kingdom') next.country = 'United Kingdom'
-        if (value === 'Nigeria') next.country = 'Nigeria'
-      }
 
       return next
     })
@@ -332,16 +304,6 @@ function CustomOrder() {
       height: formData.height,
       additionalNotes: formData.additionalNotes,
     }
-    const shipping = {
-      shippingCountry: formData.shippingCountry,
-      shippingMethod: formData.shippingMethod,
-      addressLine1: formData.addressLine1,
-      addressLine2: formData.addressLine2,
-      city: formData.city,
-      stateCounty: formData.stateCounty,
-      postcode: formData.postcode,
-      country: formData.country,
-    }
 
     requestData.append('fullName', formData.fullName)
     requestData.append('email', formData.email)
@@ -351,9 +313,9 @@ function CustomOrder() {
     requestData.append('orderType', formData.orderType)
     requestData.append('fabricPreference', formData.fabricPreference)
     requestData.append('occasion', formData.occasion)
+    requestData.append('deadline', formData.deadline)
     requestData.append('styleNotes', formData.styleNotes)
     requestData.append('measurements', JSON.stringify(measurements))
-    requestData.append('shipping', JSON.stringify(shipping))
 
     formData.inspirationImages.forEach((file) => {
       requestData.append('inspirationImages', file)
@@ -390,11 +352,11 @@ function CustomOrder() {
     }
   }
 
-  const showPaymentComingSoon = () => {
-    showToast({
-      message: 'Payment will be available after your custom order is reviewed.',
-      type: 'info',
-    })
+
+  if (!userLoggedIn) {
+    return (
+      <main className="bg-black px-5 py-20 text-white sm:px-8"><section className="mx-auto max-w-2xl rounded-[1.5rem] border border-[rgba(190,151,83,.4)] bg-white/[.04] p-7 text-center sm:p-10"><p className="text-xs uppercase tracking-[.26em] text-[var(--color-gold)]">Custom Order</p><h1 className="mt-4 font-serif text-4xl">Sign in to request a bespoke quote</h1><p className="mt-5 leading-7 text-[var(--color-muted)]">Your account keeps your measurements, quotation and payment status together.</p><div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row"><Button to="/login?redirect=/custom-order">Login</Button><Button to="/signup?redirect=/custom-order" variant="outline">Create Account</Button></div></section></main>
+    )
   }
 
   return (
@@ -432,7 +394,7 @@ function CustomOrder() {
 
       <section className="relative px-5 py-20 sm:px-8 md:py-24 lg:px-10 lg:py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(190,151,83,0.12),transparent_30%)]" />
-        <div className="relative mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-start 2xl:max-w-[1500px]">
+        <div className="relative mx-auto max-w-5xl 2xl:max-w-6xl">
           <motion.form
             className="rounded-[1.75rem] border border-white/10 bg-[rgba(255,255,255,0.045)] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.3)] backdrop-blur-md sm:p-8"
             initial={{ opacity: 0, y: 28 }}
@@ -524,6 +486,13 @@ function CustomOrder() {
                   options={selectOptions.occasion}
                   value={formData.occasion}
                 />
+                <TextField
+                  label="Preferred Deadline"
+                  name="deadline"
+                  onChange={updateField}
+                  type="date"
+                  value={formData.deadline}
+                />
               </div>
             </div>
 
@@ -559,78 +528,6 @@ function CustomOrder() {
                   onChange={updateField}
                   placeholder="Add size context, preferred fit, or request measurement guidance."
                   value={formData.additionalNotes}
-                />
-              </div>
-            </div>
-
-            <div className="mt-8 border-t border-white/10 pt-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-gold)]">
-                Shipping
-              </p>
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-                <SelectField
-                  error={errors.shippingCountry}
-                  label="Shipping Country"
-                  name="shippingCountry"
-                  onChange={updateField}
-                  options={selectOptions.shippingCountry}
-                  required
-                  value={formData.shippingCountry}
-                />
-                <SelectField
-                  label="Shipping Method"
-                  name="shippingMethod"
-                  onChange={updateField}
-                  options={availableShippingMethods}
-                  value={formData.shippingMethod}
-                />
-                <TextField
-                  error={errors.addressLine1}
-                  label="Address Line 1"
-                  name="addressLine1"
-                  onChange={updateField}
-                  placeholder="Street address"
-                  required
-                  value={formData.addressLine1}
-                />
-                <TextField
-                  label="Address Line 2"
-                  name="addressLine2"
-                  onChange={updateField}
-                  placeholder="Apartment, suite, unit"
-                  value={formData.addressLine2}
-                />
-                <TextField
-                  error={errors.city}
-                  label="City"
-                  name="city"
-                  onChange={updateField}
-                  placeholder="City"
-                  required
-                  value={formData.city}
-                />
-                <TextField
-                  label="State/County"
-                  name="stateCounty"
-                  onChange={updateField}
-                  placeholder="State or county"
-                  value={formData.stateCounty}
-                />
-                <TextField
-                  label="Postcode"
-                  name="postcode"
-                  onChange={updateField}
-                  placeholder="Postcode"
-                  value={formData.postcode}
-                />
-                <TextField
-                  error={errors.country}
-                  label="Country"
-                  name="country"
-                  onChange={updateField}
-                  placeholder="Country"
-                  required
-                  value={formData.country}
                 />
               </div>
             </div>
@@ -698,83 +595,27 @@ function CustomOrder() {
               </Button>
             </div>
           </motion.form>
-
           <motion.aside
-            className="sticky top-28 rounded-[1.75rem] border border-[rgba(190,151,83,0.42)] bg-[rgba(255,255,255,0.055)] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.34)] backdrop-blur-md lg:p-7"
-            initial={{ opacity: 0, y: 28 }}
-            transition={{ duration: 0.75, ease: 'easeOut', delay: 0.08 }}
-            viewport={{ once: true, amount: 0.25 }}
+            className="mt-8 rounded-[1.5rem] border border-[rgba(190,151,83,0.35)] bg-white/[0.04] p-6 sm:p-8"
+            initial={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.65, ease: 'easeOut' }}
+            viewport={{ once: true }}
             whileInView={{ opacity: 1, y: 0 }}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-gold)]">
-              Payment Summary
-            </p>
-            <h2 className="mt-4 font-serif text-3xl leading-tight text-white">Order Review</h2>
-            <div className="mt-7 space-y-5 border-y border-white/10 py-6">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/42">Order Type</p>
-                <p className="mt-2 text-white">{formData.orderType || 'Not selected'}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/42">Shipping Country</p>
-                <p className="mt-2 text-white">{formData.shippingCountry || 'Not selected'}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/42">Estimated Payment Status</p>
-                <p className="mt-2 text-white">Pending Confirmation</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/42">Payment Provider</p>
-                <p className="mt-2 text-white">Stripe, coming next</p>
-              </div>
-            </div>
-
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-gold)]">What Happens Next</p>
+            <h2 className="mt-3 font-serif text-3xl text-white">Request first. Quote before payment.</h2>
+            <p className="mt-4 max-w-3xl leading-7 text-[var(--color-muted)]">Nebeda Threads will review your design, measurements, fabric and deadline. We will contact you with a quotation before any payment or delivery details are requested.</p>
             {successOrder ? (
-              <motion.div
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 rounded-2xl border border-[rgba(190,151,83,0.42)] bg-[rgba(190,151,83,0.1)] px-5 py-5 text-sm leading-6 text-[var(--color-cream)]"
-                initial={{ opacity: 0, y: 10 }}
-              >
-                <p className="font-serif text-2xl leading-tight text-white">
-                  Custom Order Request Received
-                </p>
-                <p className="mt-3">
-                  Thank you. Nebeda Threads will review your request and contact you on WhatsApp or
-                  email to confirm your design, measurements, delivery, and payment details.
-                </p>
-                <p className="mt-4 text-xs uppercase tracking-[0.18em] text-white/52">
-                  Order Reference
-                </p>
-                <p className="mt-2 break-all text-white">{successOrder._id || 'Pending'}</p>
-                <div className="mt-5 flex flex-col gap-3">
-                  <Button to="/shop" variant="primary">
-                    Back to Shop
-                  </Button>
-                  <Button href={whatsappHelpLink} rel="noreferrer" target="_blank" variant="outline">
-                    Chat on WhatsApp
-                  </Button>
+              <div className="mt-6 rounded-2xl border border-[rgba(190,151,83,0.42)] bg-[rgba(190,151,83,0.1)] p-5 text-sm leading-7 text-[var(--color-cream)]">
+                <h3 className="font-serif text-2xl text-white">Custom Order Request Received</h3>
+                <p className="mt-3">Thank you. We will review your request and contact you by WhatsApp or email.</p>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <Button to="/account/custom-orders" variant="primary">View Custom Orders</Button>
+                  <Button href={whatsappHelpLink} rel="noreferrer" target="_blank" variant="outline">Chat on WhatsApp</Button>
                 </div>
-              </motion.div>
+              </div>
             ) : null}
-
-            {submitError ? (
-              <motion.p
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 rounded-2xl border border-[rgba(190,151,83,0.42)] bg-[rgba(190,151,83,0.1)] px-5 py-4 text-sm leading-6 text-[var(--color-cream)]"
-                initial={{ opacity: 0, y: 10 }}
-              >
-                {submitError}
-              </motion.p>
-            ) : null}
-
-            <Button
-              className="mt-7 w-full"
-              onClick={showPaymentComingSoon}
-              type="button"
-              variant="outline"
-            >
-              Proceed to Payment
-            </Button>
+            {submitError ? <p className="mt-6 rounded-2xl border border-red-300/25 bg-red-950/20 p-4 text-sm text-red-100">{submitError}</p> : null}
           </motion.aside>
         </div>
       </section>

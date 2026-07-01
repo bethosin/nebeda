@@ -12,7 +12,7 @@ import {
 } from "../controllers/customOrderController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { publicWriteLimiter } from "../middleware/rateLimitMiddleware.js";
-import { optionalUser, protectUser } from "../middleware/userAuthMiddleware.js";
+import { protectUser } from "../middleware/userAuthMiddleware.js";
 import {
   handleUploadErrors,
   uploadCustomOrderImages,
@@ -23,7 +23,7 @@ const router = express.Router();
 router.post(
   "/",
   publicWriteLimiter,
-  optionalUser,
+  protectUser,
   uploadCustomOrderImages,
   handleUploadErrors,
   createCustomOrder

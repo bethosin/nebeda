@@ -3,8 +3,11 @@ import Button from '../../components/ui/Button'
 import AccountCard from '../../components/account/AccountCard'
 import AccountLayout from '../../components/account/AccountLayout'
 import { getAccountDashboard } from '../../services/accountService'
+import { getStoredUser } from '../../services/userAuthService'
+import formatOrderReference from '../../utils/orderReference'
 
 function AccountDashboard() {
+  const user = getStoredUser()
   const [dashboard, setDashboard] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -29,6 +32,7 @@ function AccountDashboard() {
 
   return (
     <AccountLayout>
+      <section><p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-gold)]">My Account</p><h1 className="mt-3 font-serif text-4xl">Welcome{user?.fullName ? ', ' + user.fullName.split(" ")[0] : ""}</h1></section>
       {isLoading ? <p className="text-[var(--color-muted)]">Loading your account...</p> : null}
       {error ? <p className="rounded-2xl border border-[rgba(190,151,83,0.42)] bg-[rgba(190,151,83,0.1)] px-5 py-4 text-sm text-[var(--color-cream)]">{error}</p> : null}
 
@@ -57,7 +61,7 @@ function AccountDashboard() {
             {dashboard?.latestOrder?.orderStatus || 'No checkout orders yet'}
           </h2>
           <p className="mt-3 break-all text-sm leading-7 text-[var(--color-muted)]">
-            {dashboard?.latestOrder?._id || 'Your shop checkout orders will appear here.'}
+            {dashboard?.latestOrder?._id ? formatOrderReference(dashboard.latestOrder._id) : 'Your shop checkout orders will appear here.'}
           </p>
         </article>
         <article className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-6">

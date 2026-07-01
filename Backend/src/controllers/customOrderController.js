@@ -6,7 +6,6 @@ import CustomOrder, {
   orderTypes,
   paymentProviders,
   paymentStatuses,
-  shippingCountries,
 } from "../models/CustomOrder.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
@@ -158,6 +157,7 @@ const normalizeCreatePayload = (body) => {
     orderType: body.orderType,
     fabricPreference: body.fabricPreference,
     occasion: body.occasion,
+    deadline: body.deadline || undefined,
     styleNotes: body.styleNotes,
     measurements,
     shipping,
@@ -183,26 +183,8 @@ const validateCreatePayload = (payload) => {
     return `${payload.orderType} is not a valid order type`;
   }
 
-  const { shipping } = payload;
-
-  if (!shipping.shippingCountry) {
-    return "shippingCountry is required";
-  }
-
-  if (!shippingCountries.includes(shipping.shippingCountry)) {
-    return `${shipping.shippingCountry} is not a valid shipping country`;
-  }
-
-  if (!shipping.addressLine1) {
-    return "addressLine1 is required";
-  }
-
-  if (!shipping.city) {
-    return "city is required";
-  }
-
-  if (!shipping.country) {
-    return "country is required";
+  if (payload.deadline && Number.isNaN(new Date(payload.deadline).getTime())) {
+    return "deadline must be a valid date";
   }
 
   return null;
@@ -211,6 +193,13 @@ const validateCreatePayload = (payload) => {
 const validateAdminPayload = (payload) => {
   if (payload.orderStatus !== undefined && !orderStatuses.includes(payload.orderStatus)) {
     return `${payload.orderStatus} is not a valid order status`;
+  }
+
+  if (payload.orderStatus === "Awaiting Payment") {
+    const quote = Number(String(payload.estimatedPrice || "").replace(/,/g, "").replace(/[^0-9.]/g, ""));
+    if (!Number.isFinite(quote) || quote <= 0) {
+      return "A valid estimated price is required before awaiting payment";
+    }
   }
 
   if (
@@ -308,7 +297,6 @@ const createCustomOrder = asyncHandler(async (req, res) => {
   ]);
   const emailWarning = emailResults.includes(false) ? EMAIL_DELIVERY_WARNING : undefined;
 
-  // Stripe Checkout will later be created from this saved custom order.
   res.status(201).json({
     success: true,
     message: "Your custom order request has been received.",
@@ -479,7 +467,8 @@ const updateCustomOrder = asyncHandler(async (req, res) => {
 
   const emailResults = await Promise.all([
     previousStatus !== order.orderStatus ? sendEmailSafely(customOrderStatusUpdateEmail(order)) : null,
-    previousEstimatedPrice !== order.estimatedPrice && Number(order.estimatedPrice) > 0
+    order.orderStatus === "Awaiting Payment" &&
+    (previousEstimatedPrice !== order.estimatedPrice || previousStatus !== order.orderStatus)
       ? sendEmailSafely(customOrderQuoteReadyEmail(order))
       : null,
     previousPaymentStatus !== order.paymentStatus
@@ -487,7 +476,6 @@ const updateCustomOrder = asyncHandler(async (req, res) => {
       : null,
   ]);
 
-  // Stripe payment session state will later be synchronized with paymentStatus here.
   res.json({
     success: true,
     message: "Custom order updated successfully",

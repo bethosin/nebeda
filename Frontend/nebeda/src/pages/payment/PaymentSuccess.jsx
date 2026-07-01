@@ -11,7 +11,7 @@ function PaymentSuccess() {
         </p>
         <h1 className="mt-4 font-serif text-4xl text-white sm:text-5xl">Payment Successful</h1>
         <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[var(--color-muted)] sm:text-base">
-          Thank you. Your Nebeda Threads order is being confirmed.
+          Thank you. Your payment has been received and your Nebeda Threads order is confirmed.
         </p>
         {hasSessionReference ? (
           <p className="mt-5 text-sm text-[var(--color-gold)]">Payment reference received.</p>

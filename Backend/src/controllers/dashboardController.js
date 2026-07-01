@@ -70,7 +70,15 @@ const getDashboardStats = asyncHandler(async (_req, res) => {
     Enquiry.find({ isArchived: false }).sort("-createdAt").limit(5).lean(),
   ]);
 
-  const totalRevenue = totalRevenueResult[0]?.total || 0;
+  const [paidCustomRevenueOrders, pendingCustomPayments] = await Promise.all([
+    CustomOrder.find({ isArchived: false, paymentStatus: "Paid" }).select("estimatedPrice").lean(),
+    CustomOrder.countDocuments({ isArchived: false, orderStatus: "Awaiting Payment", paymentStatus: { $ne: "Paid" } }),
+  ]);
+  const customRevenue = paidCustomRevenueOrders.reduce((total, order) => {
+    const amount = Number(String(order.estimatedPrice || "").replace(/,/g, "").replace(/[^0-9.]/g, ""));
+    return total + (Number.isFinite(amount) ? amount : 0);
+  }, 0);
+  const totalRevenue = (totalRevenueResult[0]?.total || 0) + customRevenue;
 
   res.json({
     success: true,
@@ -86,7 +94,7 @@ const getDashboardStats = asyncHandler(async (_req, res) => {
       processingOrders,
       shippedOrders,
       deliveredOrders,
-      pendingPayments,
+      pendingPayments: pendingPayments + pendingCustomPayments,
       readyToWearProducts,
       bespokeRequests,
       weddingRequests,
