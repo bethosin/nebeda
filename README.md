@@ -49,8 +49,9 @@ npm install
 npm run dev
 ```
 
-The frontend runs at `http://localhost:5173` and the API uses
-`http://localhost:5000` by default in local configuration.
+The production storefront is `https://nebedathreads.co.uk`. Development URLs
+must be configured through the ignored frontend and backend `.env` files and
+must not be hardcoded in application source.
 
 ## Running Locally
 
@@ -130,7 +131,7 @@ counts carefully, and never run it automatically.
 ## Current Status
 
 - Ready for GitHub push and staging deployment
-- Stripe Checkout is implemented in test mode; production keys and live webhook testing remain pending
+- Stripe Checkout and fulfilment tracking are implemented; production payment reconciliation remains operational work
 - Production Resend domain verification is not complete
 - Legal pages are staging placeholders and require professional review
 

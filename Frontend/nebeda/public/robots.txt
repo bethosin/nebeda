@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /account/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /payment/
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://nebedathreads.co.uk/sitemap.xml
+Host: nebedathreads.co.uk

@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import SiteMetadata from './components/common/SiteMetadata'
 import Footer from './components/layout/Footer'
 import Navbar from './components/layout/Navbar'
 import FloatingScrollButton from './components/ui/FloatingScrollButton'
@@ -51,6 +52,7 @@ function App() {
   return (
     <ToastProvider>
       <CartProvider>
+        <SiteMetadata />
         <div className="min-h-screen bg-black">
           {isAdminRoute ? null : <Navbar />}
           {isAdminRoute ? null : <FloatingScrollButton />}

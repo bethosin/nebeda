@@ -35,11 +35,7 @@ const configuredOrigins = [process.env.CLIENT_URL, process.env.FRONTEND_URL]
   .flatMap((value) => value.split(","))
   .map((value) => value.trim().replace(/\/$/, ""))
   .filter(Boolean);
-const allowedOrigins = new Set([
-  "http://localhost:5173",
-  "https://nebeda.vercel.app",
-  ...configuredOrigins,
-]);
+const allowedOrigins = new Set(["https://nebedathreads.co.uk", ...configuredOrigins]);
 
 app.set("trust proxy", 1);
 

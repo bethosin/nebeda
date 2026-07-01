@@ -74,14 +74,14 @@ production, verify a domain such as `nebedathreads.com` and update
 Verify the configuration after restarting the API:
 
 ```http
-GET http://localhost:5000/api/health/email
+GET /api/health/email
 ```
 
 Then sign in as an administrator and send a protected test using the returned
 admin Bearer token:
 
 ```http
-POST http://localhost:5000/api/health/email-test
+POST /api/health/email-test
 Authorization: Bearer <admin-token>
 Content-Type: application/json
 
@@ -181,8 +181,6 @@ Authorization: Bearer <token>
 
 ## Notes
 
-This foundation intentionally does not include Stripe payment yet.
-
-Next backend stages:
-
-- Stripe Checkout through secure backend routes
+Stripe Checkout, verified webhooks, server-calculated shipping, and order
+fulfilment tracking are implemented. Production provider keys, webhook
+monitoring, and payment reconciliation remain deployment responsibilities.
