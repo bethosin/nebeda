@@ -13,6 +13,7 @@ import {
   customOrderConfirmationEmail,
   customOrderNotificationEmail,
   customOrderPaymentStatusUpdateEmail,
+  customOrderQuoteReadyEmail,
   customOrderStatusUpdateEmail,
 } from "../utils/emailTemplates.js";
 import { EMAIL_DELIVERY_WARNING, sendEmailSafely } from "../utils/sendEmail.js";
@@ -456,6 +457,7 @@ const updateCustomOrder = asyncHandler(async (req, res) => {
     payload.orderStatus && order.orderStatus === "New" && payload.orderStatus !== "New";
   const previousStatus = order.orderStatus;
   const previousPaymentStatus = order.paymentStatus;
+  const previousEstimatedPrice = order.estimatedPrice;
 
   Object.entries(payload).forEach(([field, value]) => {
     if (value !== undefined) {
@@ -477,6 +479,9 @@ const updateCustomOrder = asyncHandler(async (req, res) => {
 
   const emailResults = await Promise.all([
     previousStatus !== order.orderStatus ? sendEmailSafely(customOrderStatusUpdateEmail(order)) : null,
+    previousEstimatedPrice !== order.estimatedPrice && Number(order.estimatedPrice) > 0
+      ? sendEmailSafely(customOrderQuoteReadyEmail(order))
+      : null,
     previousPaymentStatus !== order.paymentStatus
       ? sendEmailSafely(customOrderPaymentStatusUpdateEmail(order))
       : null,

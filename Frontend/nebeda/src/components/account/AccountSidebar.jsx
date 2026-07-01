@@ -7,6 +7,7 @@ const links = [
   { label: 'My Orders', to: '/account/orders' },
   { label: 'Custom Orders', to: '/account/custom-orders' },
   { label: 'Profile', to: '/account/profile' },
+  { label: 'Security', to: '/account/security' },
   { label: 'Shop', to: '/shop' },
 ]
 

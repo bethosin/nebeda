@@ -13,6 +13,7 @@ const requiredEmailEnvironmentKeys = [
   "EMAIL_FROM_NAME",
   "EMAIL_FROM_ADDRESS",
   "BRAND_NOTIFICATION_EMAIL",
+  "EMAIL_REPLY_TO",
 ];
 
 const getMissingEmailConfigKeys = () =>

@@ -56,43 +56,19 @@ only by a verified webhook. Never expose `STRIPE_SECRET_KEY` or
 ## Resend Email Setup
 
 1. Create a Resend account and generate an API key.
-2. Add the key to `.env` as `RESEND_API_KEY`.
-3. Use `onboarding@resend.dev` as `EMAIL_FROM_ADDRESS` while testing.
-4. Set `BRAND_NOTIFICATION_EMAIL=nebeda33@gmail.com`.
-5. Verify the Nebeda Threads domain in Resend before production, then change
-   `EMAIL_FROM_ADDRESS` to an address on that verified domain, such as
-   `hello@nebedathreads.com`.
+2. Verify nebedathreads.co.uk in Resend.
+3. Configure EMAIL_FROM_NAME=Nebeda Threads.
+4. Configure EMAIL_FROM_ADDRESS=hello@nebedathreads.co.uk.
+5. Configure EMAIL_REPLY_TO=support@nebedathreads.co.uk.
+6. Configure BRAND_NOTIFICATION_EMAIL=nebeda33@gmail.com.
 
-While using Resend's test sender (`onboarding@resend.dev`), delivery may be
-limited to verified recipients depending on the Resend account status. Email
-failures are logged safely and do not roll back successful customer actions.
-Adding an address to a Resend Audience does not verify it for test-mode sending.
-Without a verified domain, Resend may continue to restrict recipients. For
-production, verify a domain such as `nebedathreads.com` and update
-`EMAIL_FROM_ADDRESS` to `hello@nebedathreads.com`.
+Email delivery failures are logged safely and do not roll back successful customer actions. Administrators can review delivery outcomes through the protected Email Logs page.
 
-Verify the configuration after restarting the API:
+Verify the configuration after restarting the API with GET /api/health/email.
 
-```http
-GET /api/health/email
-```
+The protected admin email test route is POST /api/health/email-test with an admin Bearer token.
 
-Then sign in as an administrator and send a protected test using the returned
-admin Bearer token:
-
-```http
-POST /api/health/email-test
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-  "to": "nebeda33@gmail.com"
-}
-```
-
-For production delivery, verify the Nebeda Threads domain in Resend and update
-`EMAIL_FROM_ADDRESS` to an address on that verified domain. Do not expose the
-Resend API key in frontend code, API responses, or logs.
+Never expose the Resend API key in frontend code, API responses, or logs.
 
 ## Run
 

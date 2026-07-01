@@ -6,6 +6,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import {
   paidOrderNotificationEmail,
   paymentConfirmationEmail,
+  paymentFailedEmail,
 } from "../utils/emailTemplates.js";
 import { sendEmailSafely } from "../utils/sendEmail.js";
 
@@ -82,6 +83,11 @@ const getReusableSession = async (stripe, order) => {
 };
 
 const createCheckoutSession = asyncHandler(async (req, res) => {
+  if (!req.user.isEmailVerified) {
+    res.status(403);
+    throw new Error("Please verify your email before completing payment.");
+  }
+
   const { orderId } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
@@ -209,7 +215,7 @@ const handleFailedPayment = async (paymentIntent) => {
   if (!mongoose.Types.ObjectId.isValid(orderId)) return;
 
   const reason = paymentIntent.last_payment_error?.message || "Stripe payment failed.";
-  await Order.updateOne(
+  const order = await Order.findOneAndUpdate(
     { _id: orderId, paymentStatus: { $ne: "Paid" } },
     {
       $set: {
@@ -219,7 +225,10 @@ const handleFailedPayment = async (paymentIntent) => {
         paymentFailureReason: reason.slice(0, 500),
       },
     },
+    { new: true },
   );
+
+  if (order) await sendEmailSafely(paymentFailedEmail(order));
 };
 
 const stripeWebhookHandler = async (req, res, next) => {

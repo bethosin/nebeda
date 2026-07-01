@@ -25,7 +25,10 @@ const protectUser = asyncHandler(async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
-    if (!user || !user.isActive) {
+    const passwordChangedAfterToken = user?.passwordChangedAt &&
+      Math.floor(user.passwordChangedAt.getTime() / 1000) > decoded.iat;
+
+    if (!user || !user.isActive || passwordChangedAfterToken) {
       res.status(401);
       throw new Error("Not authorized. User account is unavailable.");
     }
@@ -54,7 +57,10 @@ const optionalUser = asyncHandler(async (req, _res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
-    if (user?.isActive) {
+    const passwordChangedAfterToken = user?.passwordChangedAt &&
+      Math.floor(user.passwordChangedAt.getTime() / 1000) > decoded.iat;
+
+    if (user?.isActive && !passwordChangedAfterToken) {
       req.user = user;
     }
   } catch (_error) {

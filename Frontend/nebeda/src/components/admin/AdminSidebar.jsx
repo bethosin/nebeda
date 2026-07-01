@@ -11,6 +11,7 @@ const sidebarLinks = [
   { label: 'Custom Orders', to: '/admin/custom-orders' },
   { label: 'Enquiries', to: '/admin/enquiries' },
   { label: 'Payments', to: '/admin/payments' },
+  { label: 'Email Logs', to: '/admin/email-logs' },
   { label: 'Settings', to: '/admin/settings' },
 ]
 

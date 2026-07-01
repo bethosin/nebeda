@@ -48,6 +48,33 @@ function loginUser(payload) {
   })
 }
 
+function verifyEmail(token) {
+  return apiRequest('/users/verify-email', {
+    body: { token },
+    method: 'POST',
+  }).then((data) => {
+    if (data.user) storeUserSession(data)
+    return data
+  })
+}
+
+function resendVerificationEmail() {
+  return apiRequest('/users/resend-verification', { method: 'POST' })
+}
+
+function forgotPassword(email) {
+  return apiRequest('/users/forgot-password', {
+    body: { email },
+    method: 'POST',
+  })
+}
+
+function resetPassword(token, password) {
+  return apiRequest('/users/reset-password', {
+    body: { token, password },
+    method: 'POST',
+  })
+}
 function getCurrentUser() {
   return apiRequest('/users/me').then((data) => {
     const user = getItem(data, 'user')
@@ -77,12 +104,16 @@ function updateAdminUserStatus(id, isActive) {
 }
 
 export {
+  forgotPassword,
   getCurrentUser,
   getAdminUsers,
   getStoredUser,
   isUserAuthenticated,
   loginUser,
   logoutUser,
+  resendVerificationEmail,
+  resetPassword,
   signupUser,
   updateAdminUserStatus,
+  verifyEmail,
 }

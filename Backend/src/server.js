@@ -13,6 +13,7 @@ import { stripeWebhookHandler } from "./controllers/paymentController.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
 import customOrderRoutes from "./routes/customOrderRoutes.js";
+import emailLogRoutes from "./routes/emailLogRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import enquiryRoutes from "./routes/enquiryRoutes.js";
 import healthRoutes from "./routes/healthRoutes.js";
@@ -89,6 +90,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/custom-orders", customOrderRoutes);
 app.use("/api/enquiries", enquiryRoutes);
 app.use("/api/newsletter", newsletterRoutes);
+app.use("/api/email-logs", emailLogRoutes);
 app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 

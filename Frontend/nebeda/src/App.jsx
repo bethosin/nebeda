@@ -10,6 +10,7 @@ import AddProduct from './pages/admin/AddProduct'
 import AdminCustomOrders from './pages/admin/AdminCustomOrders'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminEnquiries from './pages/admin/AdminEnquiries'
+import AdminEmailLogs from './pages/admin/AdminEmailLogs'
 import EditProduct from './pages/admin/EditProduct'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminNewsletter from './pages/admin/AdminNewsletter'
@@ -24,6 +25,7 @@ import MyCustomOrders from './pages/account/MyCustomOrders'
 import MyOrders from './pages/account/MyOrders'
 import OrderDetails from './pages/account/OrderDetails'
 import Profile from './pages/account/Profile'
+import Security from './pages/account/Security'
 import Contact from './pages/Contact'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
@@ -31,6 +33,9 @@ import CustomOrder from './pages/CustomOrder'
 import Home from './pages/Home'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
+import VerifyEmail from './pages/auth/VerifyEmail'
 import Shop from './pages/Shop'
 import NotFound from './pages/NotFound'
 import ShippingInformation from './pages/ShippingInformation'
@@ -66,12 +71,16 @@ function App() {
               <Route element={<PaymentCancel />} path="/payment/cancel" />
               <Route element={<Login />} path="/login" />
               <Route element={<Signup />} path="/signup" />
+              <Route element={<ForgotPassword />} path="/forgot-password" />
+              <Route element={<ResetPassword />} path="/reset-password/:token" />
+              <Route element={<VerifyEmail />} path="/verify-email" />
               <Route element={<AccountDashboard />} path="/account" />
               <Route element={<MyOrders />} path="/account/orders" />
               <Route element={<OrderDetails />} path="/account/orders/:id" />
               <Route element={<MyCustomOrders />} path="/account/custom-orders" />
               <Route element={<CustomOrderDetails />} path="/account/custom-orders/:id" />
               <Route element={<Profile />} path="/account/profile" />
+              <Route element={<Security />} path="/account/security" />
               <Route element={<CustomOrder />} path="/custom-order" />
               <Route element={<About />} path="/about" />
               <Route element={<Contact />} path="/contact" />
@@ -123,6 +132,10 @@ function App() {
               <Route
                 element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>}
                 path="/admin/settings"
+              />
+              <Route
+                element={<ProtectedAdminRoute><AdminEmailLogs /></ProtectedAdminRoute>}
+                path="/admin/email-logs"
               />
               <Route element={<Navigate replace to="/admin/dashboard" />} path="/admin" />
               <Route element={<NotFound />} path="*" />

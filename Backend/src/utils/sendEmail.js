@@ -1,4 +1,5 @@
 import resend, { emailConfigIsReady } from "../config/email.js";
+import EmailLog from "../models/EmailLog.js";
 
 const EMAIL_DELIVERY_WARNING = "Action completed, but email notification could not be delivered.";
 
@@ -14,10 +15,34 @@ const isResendTestSenderError = (error) =>
     error?.message || ""
   );
 
-const sendEmail = async ({ to, subject, text, html }) => {
-  const recipients = Array.isArray(to) ? to.filter(Boolean) : to;
+const writeEmailLogs = async ({ recipients, subject, template, status, error, messageId }) => {
+  try {
+    await EmailLog.insertMany(
+      recipients.map((recipient) => ({
+        recipient,
+        subject,
+        template,
+        status,
+        provider: "Resend",
+        error: error?.slice(0, 1000),
+        messageId,
+        sentAt: status === "Sent" ? new Date() : undefined,
+      })),
+      { ordered: false },
+    );
+  } catch (logError) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("Email log write failed:", logError.message);
+    }
+  }
+};
 
-  if (!recipients || (Array.isArray(recipients) && recipients.length === 0)) {
+const sendEmail = async ({ to, subject, text, html, template = "general" }) => {
+  const recipients = (Array.isArray(to) ? to : [to])
+    .filter(Boolean)
+    .map((recipient) => String(recipient).trim().toLowerCase());
+
+  if (recipients.length === 0) {
     throw new Error("Email recipient is required.");
   }
 
@@ -27,7 +52,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
 
   if (!emailConfigIsReady() || !resend) {
     throw new Error(
-      "Resend email configuration is incomplete. Check RESEND_API_KEY, EMAIL_FROM_ADDRESS, and BRAND_NOTIFICATION_EMAIL."
+      "Resend email configuration is incomplete. Check the required email environment variables."
     );
   }
 
@@ -35,6 +60,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     console.log("Sending email with Resend:", {
       to: recipients,
       subject,
+      template,
     });
   }
 

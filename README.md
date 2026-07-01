@@ -77,6 +77,7 @@ CLOUDINARY_UNSIGNED_UPLOAD_PRESET
 RESEND_API_KEY
 EMAIL_FROM_NAME
 EMAIL_FROM_ADDRESS
+EMAIL_REPLY_TO
 BRAND_NOTIFICATION_EMAIL
 STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
@@ -158,3 +159,9 @@ See `Backend/README.md` for the API route inventory and email setup details.
 ## License
 
 This project is licensed under the MIT License. See `LICENSE`.
+
+## Production account and email flows
+
+Customer accounts use hashed passwords, JWT-protected account routes, verified-email checkout gating, expiring hashed email-verification tokens, and one-hour hashed password-reset tokens. Transactional mail is delivered by Resend from the verified `nebedathreads.co.uk` domain, with delivery outcomes available to administrators under Email Logs.
+
+Required production email variables include `RESEND_API_KEY`, `EMAIL_FROM_NAME`, `EMAIL_FROM_ADDRESS`, `EMAIL_REPLY_TO`, and `BRAND_NOTIFICATION_EMAIL`. Keep every value in the ignored `Backend/.env` file locally and in Render environment settings in production.

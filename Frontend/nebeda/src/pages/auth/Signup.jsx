@@ -22,6 +22,7 @@ function Signup() {
   const [errors, setErrors] = useState({})
   const [newsletterOptIn, setNewsletterOptIn] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPasswords, setShowPasswords] = useState(false)
   const redirectTo = new URLSearchParams(location.search).get('redirect') || location.state?.from || '/account'
   const loginLink =
     redirectTo === '/account' ? '/login' : `/login?redirect=${encodeURIComponent(redirectTo)}`
@@ -80,7 +81,7 @@ function Signup() {
           })
       }
 
-      showToast({ message: 'Your Nebeda Threads account has been created.', type: 'success' })
+      showToast({ message: 'Account created. Please check your email to verify your address.', type: 'success' })
       logEmailWarning(signupResponse, 'Customer signup')
       navigate(redirectTo, { replace: true })
     } catch (apiError) {
@@ -124,13 +125,14 @@ function Signup() {
                   className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-[var(--color-gold)]"
                   name={name}
                   onChange={updateField}
-                  type={type}
+                  type={type === 'password' && showPasswords ? 'text' : type}
                   value={formData[name]}
                 />
                 {errors[name] ? <p className="mt-2 text-sm text-[var(--color-gold-light)]">{errors[name]}</p> : null}
               </label>
             ))}
           </div>
+          <label className="mt-5 flex items-center gap-3 text-sm text-[var(--color-muted)]"><input checked={showPasswords} className="size-4 accent-[var(--color-gold)]" onChange={(event) => setShowPasswords(event.target.checked)} type="checkbox" /> Show passwords</label>
           <label className="mt-6 flex items-start gap-3 text-sm leading-7 text-[var(--color-muted)]">
             <input
               checked={newsletterOptIn}

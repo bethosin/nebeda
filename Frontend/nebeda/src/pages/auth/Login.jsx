@@ -13,6 +13,7 @@ function Login() {
   const [formData, setFormData] = useState(initialForm)
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const redirectTo = new URLSearchParams(location.search).get('redirect') || location.state?.from || '/account'
   const signupLink =
@@ -90,17 +91,19 @@ function Login() {
                 className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-[var(--color-gold)]"
                 name="password"
                 onChange={updateField}
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={formData.password}
               />
               {errors.password ? <p className="mt-2 text-sm text-[var(--color-gold-light)]">{errors.password}</p> : null}
+              <label className="mt-3 flex items-center gap-2 text-sm text-[var(--color-muted)]"><input checked={showPassword} className="accent-[var(--color-gold)]" onChange={(event) => setShowPassword(event.target.checked)} type="checkbox" /> Show password</label>
             </label>
           </div>
 
           <Button className="mt-7 w-full" disabled={isSubmitting} type="submit" variant="primary">
             {isSubmitting ? 'Logging In...' : 'Login'}
           </Button>
-          <p className="mt-5 text-sm text-[var(--color-muted)]">
+          <Link className="mt-5 inline-block text-sm text-[var(--color-gold)] hover:text-white" to="/forgot-password">Forgot password?</Link>
+          <p className="mt-4 text-sm text-[var(--color-muted)]">
             New to Nebeda?{' '}
             <Link className="text-[var(--color-gold)] transition hover:text-white" to={signupLink}>
               Create an account

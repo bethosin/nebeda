@@ -32,6 +32,15 @@ function AccountDashboard() {
       {isLoading ? <p className="text-[var(--color-muted)]">Loading your account...</p> : null}
       {error ? <p className="rounded-2xl border border-[rgba(190,151,83,0.42)] bg-[rgba(190,151,83,0.1)] px-5 py-4 text-sm text-[var(--color-cream)]">{error}</p> : null}
 
+      {!isLoading && dashboard && !dashboard.isEmailVerified ? (
+        <section className="rounded-[1.5rem] border border-[rgba(190,151,83,.45)] bg-[rgba(190,151,83,.08)] p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-gold)]">Account Security</p>
+          <h2 className="mt-3 font-serif text-2xl">Verify your email to use secure checkout</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">Your account remains available for browsing and order history.</p>
+          <Button className="mt-5" to="/account/security">Verify Email</Button>
+        </section>
+      ) : null}
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <AccountCard label="Total Orders" value={dashboard?.totalOrders || 0} />
         <AccountCard label="Pending Orders" value={dashboard?.pendingOrders || 0} />

@@ -77,7 +77,7 @@ function AdminLogin() {
               className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none transition placeholder:text-white/32 focus:border-[var(--color-gold)]"
               name="email"
               onChange={updateField}
-              placeholder="admin@nebedathreads.com"
+              placeholder="nebeda33@gmail.com"
               type="email"
               value={formData.email}
             />

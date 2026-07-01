@@ -28,6 +28,32 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: [30, "WhatsApp number cannot exceed 30 characters"],
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerifiedAt: {
+      type: Date,
+    },
+    emailVerificationToken: {
+      type: String,
+      select: false,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      select: false,
+    },
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false,
+    },
+    passwordChangedAt: {
+      type: Date,
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -41,6 +67,10 @@ const userSchema = new mongoose.Schema(
     toJSON: {
       transform(_doc, ret) {
         delete ret.password;
+        delete ret.emailVerificationToken;
+        delete ret.emailVerificationExpires;
+        delete ret.passwordResetToken;
+        delete ret.passwordResetExpires;
         delete ret.__v;
         return ret;
       },
@@ -51,6 +81,8 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ isActive: 1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ fullName: "text", email: "text", whatsappNumber: "text" });
+userSchema.index({ emailVerificationToken: 1 }, { sparse: true });
+userSchema.index({ passwordResetToken: 1 }, { sparse: true });
 
 userSchema.pre("save", async function hashPassword() {
   if (!this.isModified("password")) {

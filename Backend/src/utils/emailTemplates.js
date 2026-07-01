@@ -27,14 +27,43 @@ const wrapEmail = (title, body) => ({
         <div style="font-family: Arial, sans-serif; color:#dfd7ca; line-height:1.7; font-size:15px;">${body}</div>
         <div style="font-family: Arial, sans-serif; border-top:1px solid rgba(190,151,83,.25); margin-top:28px; padding-top:20px; color:#aaa197; line-height:1.7; font-size:13px;">
           <p style="margin:0; color:#f8f3ea;"><strong>Nebeda Threads</strong> &middot; Elevate Your Essence</p>
-          <p style="margin:6px 0 0;">Email: nebeda33@gmail.com &middot; WhatsApp: +447448668759</p>
+          <p style="margin:6px 0 0;">Email: support@nebedathreads.co.uk &middot; WhatsApp: +44 7448 668759<br><a href="https://nebedathreads.co.uk" style="color:#be9753;">nebedathreads.co.uk</a></p>
         </div>
       </div>
     </div>
   `,
 });
 
+const actionButton = (label, url) =>
+  `<p style="margin:26px 0;"><a href="${escapeHtml(url)}" style="display:inline-block;background:#be9753;color:#050505;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:8px;">${escapeHtml(label)}</a></p>`;
+
+const emailVerificationEmail = (user, verificationUrl) => ({
+  to: user.email,
+  subject: "Verify Your Nebeda Threads Email",
+  template: "email-verification",
+  ...wrapEmail(
+    "Verify Your Email",
+    `<p>Hello ${escapeHtml(getFirstName(user.fullName))},</p>
+     <p>Confirm your email address to securely complete payments and track your Nebeda Threads orders.</p>
+     ${actionButton("Verify Email", verificationUrl)}
+     <p>This link expires in 24 hours. If you did not create this account, you can ignore this email.</p>`
+  ),
+});
+
+const passwordResetEmail = (user, resetUrl) => ({
+  to: user.email,
+  subject: "Reset Your Nebeda Threads Password",
+  template: "password-reset",
+  ...wrapEmail(
+    "Reset Your Password",
+    `<p>Hello ${escapeHtml(getFirstName(user.fullName))},</p>
+     <p>We received a request to reset your Nebeda Threads password.</p>
+     ${actionButton("Reset Password", resetUrl)}
+     <p>This secure link expires in one hour. If you did not request it, no action is needed.</p>`
+  ),
+});
 const welcomeEmail = (user) => ({
+  template: "welcome",
   to: user.email,
   subject: "Welcome to Nebeda Threads",
   ...wrapEmail(
@@ -45,6 +74,7 @@ const welcomeEmail = (user) => ({
 });
 
 const newSignupNotificationEmail = (user) => ({
+  template: "new-signup-notification",
   to: brandEmail(),
   subject: "New Nebeda Threads Customer Signup",
   ...wrapEmail(
@@ -57,6 +87,7 @@ const newSignupNotificationEmail = (user) => ({
 });
 
 const customOrderConfirmationEmail = (order) => ({
+  template: "custom-order-received",
   to: order.email,
   subject: "Custom Order Request Received",
   ...wrapEmail(
@@ -68,6 +99,7 @@ const customOrderConfirmationEmail = (order) => ({
 });
 
 const customOrderNotificationEmail = (order) => ({
+  template: "custom-order-notification",
   to: brandEmail(),
   subject: "New Nebeda Threads Custom Order",
   ...wrapEmail(
@@ -81,6 +113,7 @@ const customOrderNotificationEmail = (order) => ({
 });
 
 const enquiryConfirmationEmail = (enquiry) => ({
+  template: "enquiry-confirmation",
   to: enquiry.email,
   subject: "Your Nebeda Threads Enquiry Has Been Received",
   ...wrapEmail(
@@ -91,6 +124,7 @@ const enquiryConfirmationEmail = (enquiry) => ({
 });
 
 const enquiryNotificationEmail = (enquiry) => ({
+  template: "enquiry-notification",
   to: brandEmail(),
   subject: "New Nebeda Threads Enquiry",
   ...wrapEmail(
@@ -104,6 +138,7 @@ const enquiryNotificationEmail = (enquiry) => ({
 });
 
 const orderReceivedEmail = (order) => ({
+  template: "order-placed",
   to: order.customer.email,
   subject: "Nebeda Threads Order Received",
   ...wrapEmail(
@@ -116,6 +151,7 @@ const orderReceivedEmail = (order) => ({
 });
 
 const orderNotificationEmail = (order) => ({
+  template: "new-order-notification",
   to: brandEmail(),
   subject: "New Nebeda Threads Cart Order",
   ...wrapEmail(
@@ -129,6 +165,7 @@ const orderNotificationEmail = (order) => ({
 });
 
 const paymentConfirmationEmail = (order) => ({
+  template: "payment-received",
   to: order.customer.email,
   subject: "Nebeda Threads Payment Confirmation",
   ...wrapEmail(
@@ -140,7 +177,21 @@ const paymentConfirmationEmail = (order) => ({
   ),
 });
 
+const paymentFailedEmail = (order) => ({
+  to: order.customer.email,
+  subject: "Nebeda Threads Payment Could Not Be Completed",
+  template: "payment-failed",
+  ...wrapEmail(
+    "Payment Could Not Be Completed",
+    `<p>Hello ${escapeHtml(getFirstName(order.customer.fullName))},</p>
+     <p>Your order remains safely pending, but the latest payment attempt was not completed.</p>
+     <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
+     ${actionButton("Complete Payment", "https://nebedathreads.co.uk/account/orders/" + order._id)}
+     <p>No successful payment has been recorded for this attempt.</p>`
+  ),
+});
 const paidOrderNotificationEmail = (order) => ({
+  template: "paid-order-notification",
   to: brandEmail(),
   subject: "Paid Nebeda Threads Order",
   ...wrapEmail(
@@ -187,6 +238,7 @@ const orderStatusUpdateEmail = (order) => {
   };
 };
 const orderPaymentStatusUpdateEmail = (order) => ({
+  template: "payment-status-update",
   to: order.customer.email,
   subject: "Nebeda Threads Payment Status Update",
   ...wrapEmail(
@@ -196,7 +248,22 @@ const orderPaymentStatusUpdateEmail = (order) => ({
   ),
 });
 
+const customOrderQuoteReadyEmail = (order) => ({
+  to: order.email,
+  subject: "Your Nebeda Threads Custom Order Quote Is Ready",
+  template: "custom-order-quote-ready",
+  ...wrapEmail(
+    "Your Custom Order Quote Is Ready",
+    `<p>Hello ${escapeHtml(getFirstName(order.fullName))},</p>
+     <p>Your bespoke request has been reviewed and a quote is ready.</p>
+     <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
+     <p><strong>Estimated price:</strong> £${Number(order.estimatedPrice || 0).toFixed(2)}</p>
+     ${actionButton("View Custom Order", "https://nebedathreads.co.uk/account/custom-orders/" + order._id)}
+     <p>We will confirm the final design, delivery, and payment details with you before production.</p>`
+  ),
+});
 const customOrderStatusUpdateEmail = (order) => ({
+  template: "custom-order-status",
   to: order.email,
   subject: "Nebeda Threads Custom Order Update",
   ...wrapEmail(
@@ -208,6 +275,7 @@ const customOrderStatusUpdateEmail = (order) => ({
 });
 
 const customOrderPaymentStatusUpdateEmail = (order) => ({
+  template: "custom-order-payment-status",
   to: order.email,
   subject: "Nebeda Threads Custom Order Payment Update",
   ...wrapEmail(
@@ -218,6 +286,7 @@ const customOrderPaymentStatusUpdateEmail = (order) => ({
 });
 
 const newsletterWelcomeEmail = (subscriber) => ({
+  template: "newsletter-welcome",
   to: subscriber.email,
   subject: "Welcome to Nebeda Threads Updates",
   ...wrapEmail(
@@ -228,6 +297,7 @@ const newsletterWelcomeEmail = (subscriber) => ({
 });
 
 const newsletterNotificationEmail = (subscriber) => ({
+  template: "newsletter-notification",
   to: brandEmail(),
   subject: "New Newsletter Subscriber",
   ...wrapEmail(
@@ -244,8 +314,10 @@ const newsletterNotificationEmail = (subscriber) => ({
 
 export {
   customOrderConfirmationEmail,
+  emailVerificationEmail,
   customOrderNotificationEmail,
   customOrderPaymentStatusUpdateEmail,
+  customOrderQuoteReadyEmail,
   customOrderStatusUpdateEmail,
   enquiryConfirmationEmail,
   enquiryNotificationEmail,
@@ -257,6 +329,8 @@ export {
   orderReceivedEmail,
   orderStatusUpdateEmail,
   paidOrderNotificationEmail,
+  passwordResetEmail,
   paymentConfirmationEmail,
+  paymentFailedEmail,
   welcomeEmail,
 };

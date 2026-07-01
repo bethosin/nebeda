@@ -47,6 +47,10 @@ const createOrder = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error("Please login or create an account to complete your order.");
   }
+  if (!req.user.isEmailVerified) {
+    res.status(403);
+    throw new Error("Please verify your email before completing payment.");
+  }
 
   const payload = {
     customer: req.body.customer,

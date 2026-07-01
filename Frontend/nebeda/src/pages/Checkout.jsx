@@ -44,6 +44,8 @@ function Checkout() {
   const [shippingError, setShippingError] = useState('')
   const [isShippingLoading, setIsShippingLoading] = useState(true)
   const userLoggedIn = isUserAuthenticated()
+  const storedUser = getStoredUser()
+  const emailVerified = Boolean(storedUser?.isEmailVerified)
   const shippingCountries = shippingCatalog?.countries || ['United Kingdom']
   const selectedShipping = shippingQuote?.quote || null
   const availableShippingMethods = shippingQuote?.options || []
@@ -161,6 +163,10 @@ function Checkout() {
         message: 'Please login or create an account to complete your order.',
         type: 'error',
       })
+      return
+    }
+    if (!emailVerified) {
+      showToast({ message: 'Please verify your email before completing payment.', type: 'error' })
       return
     }
     if (!validateForm()) return
@@ -300,6 +306,16 @@ function Checkout() {
               <Button to="/signup?redirect=/checkout" variant="outline">
                 Create Account
               </Button>
+            </div>
+          </section>
+        ) : !emailVerified ? (
+          <section className="mt-10 max-w-3xl rounded-[1.5rem] border border-[rgba(190,151,83,0.42)] bg-white/[0.045] p-6 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--color-gold)]">Email Verification</p>
+            <h2 className="mt-4 font-serif text-3xl sm:text-4xl">Please Verify Your Email</h2>
+            <p className="mt-4 leading-7 text-[var(--color-muted)]">Verify your email before completing payment. Your cart is saved while you do this.</p>
+            <div className="mt-7 flex flex-col gap-4 sm:flex-row">
+              <Button to="/account/security" variant="primary">Resend Verification Email</Button>
+              <Button to="/account" variant="outline">My Account</Button>
             </div>
           </section>
         ) : (
