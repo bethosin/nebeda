@@ -27,17 +27,42 @@ const requiredFields = [
   "orderType",
 ];
 
-const measurementFields = [
-  "chestBust",
-  "waist",
-  "hip",
-  "shoulder",
-  "sleeveLength",
-  "topLength",
-  "trouserSkirtLength",
-  "height",
-  "additionalNotes",
-];
+const measurementProfiles = {
+  Female: [
+    "Shoulder",
+    "Bust",
+    "Round Under Bust",
+    "Shoulder to Bust Point",
+    "Shoulder to Under Bust",
+    "Nipple to Nipple",
+    "Waist",
+    "Half Length",
+    "Hip",
+    "Sleeve Length",
+    "Round Arm",
+    "Full Length",
+    "From Belly Button to Down",
+  ],
+  Male: [
+    "Shoulder",
+    "Chest",
+    "Waist",
+    "Hip",
+    "Neck",
+    "Sleeve Length",
+    "Round Arm",
+    "Wrist",
+    "Top Length",
+    "Trouser Waist",
+    "Thigh",
+    "Knee",
+    "Calf",
+    "Ankle",
+    "Trouser Length",
+  ],
+};
+
+const measurementUnits = ["cm", "inches"];
 
 const shippingFields = [
   "shippingCountry",
@@ -138,11 +163,23 @@ const normalizeAdminPayload = (body) => {
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const normalizeCreatePayload = (body) => {
-  const measurements = {
-    ...parseObjectField(body.measurements, "measurements"),
-    ...pickFields(body, measurementFields),
+const normalizeMeasurements = (value) => {
+  const parsed = parseObjectField(value, "measurements");
+  const fields = Array.isArray(parsed.fields)
+    ? parsed.fields
+        .filter((field) => field?.name && field.value !== "" && field.value !== null && field.value !== undefined)
+        .map((field) => ({ name: String(field.name).trim(), value: Number(field.value) }))
+    : [];
+
+  return {
+    gender: parsed.gender,
+    unit: parsed.unit || "cm",
+    fields,
   };
+};
+
+const normalizeCreatePayload = (body) => {
+  const measurements = normalizeMeasurements(body.measurements);
   const shipping = {
     ...parseObjectField(body.shipping, "shipping"),
     ...pickFields(body, shippingFields),
@@ -185,6 +222,32 @@ const validateCreatePayload = (payload) => {
 
   if (payload.deadline && Number.isNaN(new Date(payload.deadline).getTime())) {
     return "deadline must be a valid date";
+  }
+
+  if (!measurementProfiles[payload.measurements.gender]) {
+    return "Garment measurement gender must be Male or Female";
+  }
+
+  const expectedOrderGender = payload.measurements.gender === "Male" ? "Men" : "Women";
+  if (payload.gender !== expectedOrderGender) {
+    return "Garment gender does not match the measurement profile";
+  }
+
+  if (!measurementUnits.includes(payload.measurements.unit)) {
+    return "Measurement unit must be cm or inches";
+  }
+
+  if (!payload.measurements.fields.length) {
+    return "At least one measurement is required";
+  }
+
+  const allowedFields = new Set(measurementProfiles[payload.measurements.gender]);
+  const fieldNames = new Set();
+  for (const field of payload.measurements.fields) {
+    if (!allowedFields.has(field.name)) return `${field.name} is not valid for this measurement profile`;
+    if (fieldNames.has(field.name)) return `${field.name} was provided more than once`;
+    if (!Number.isFinite(field.value) || field.value < 0) return `${field.name} must be a positive number`;
+    fieldNames.add(field.name);
   }
 
   return null;

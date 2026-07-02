@@ -7,6 +7,7 @@ import { getMyCustomOrderById } from '../../services/accountService'
 import { createCustomOrderCheckoutSession } from '../../services/paymentService'
 import { useToast } from '../../components/ui/toastContext'
 import formatOrderReference from '../../utils/orderReference'
+import MeasurementTable from '../../components/custom-order/MeasurementTable'
 
 function formatDate(value) {
   return value ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(new Date(value)) : 'Not set'
@@ -82,10 +83,8 @@ function CustomOrderDetails() {
             </article>
             <article className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-6">
               <h2 className="font-serif text-2xl">Measurements</h2>
-              <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                {Object.entries(order.measurements || {}).map(([key, value]) => (
-                  <Field key={key} label={key.replace(/([A-Z])/g, ' $1')} value={value} />
-                ))}
+              <div className="mt-6">
+                <MeasurementTable measurements={order.measurements} fallbackGender={order.gender} />
               </div>
             </article>
           </section>

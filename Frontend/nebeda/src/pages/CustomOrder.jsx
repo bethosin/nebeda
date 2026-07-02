@@ -6,6 +6,7 @@ import { createCustomOrder } from '../services/customOrderService'
 import logEmailWarning from '../utils/emailDiagnostics'
 import { getWhatsAppMessageLink } from '../data/contactDetails'
 import { isUserAuthenticated } from '../services/userAuthService'
+import { measurementProfiles } from '../data/measurementProfiles'
 
 const processSteps = [
   {
@@ -31,7 +32,6 @@ const processSteps = [
 ]
 
 const selectOptions = {
-  gender: ['Men', 'Women', 'Couple'],
   outfitType: [
     'Senator Wear',
     'Agbada',
@@ -60,7 +60,7 @@ const requiredFields = [
   'fullName',
   'email',
   'whatsappNumber',
-  'gender',
+  'garmentFor',
   'outfitType',
   'orderType',
 ]
@@ -69,20 +69,13 @@ const initialFormData = {
   fullName: '',
   email: '',
   whatsappNumber: '',
-  gender: '',
+  garmentFor: '',
   outfitType: '',
   orderType: '',
   fabricPreference: '',
   occasion: '',
-  chestBust: '',
-  waist: '',
-  hip: '',
-  shoulder: '',
-  sleeveLength: '',
-  topLength: '',
-  trouserSkirtLength: '',
-  height: '',
-  additionalNotes: '',
+  measurementUnit: 'cm',
+  measurements: {},
   inspirationImages: [],
   deadline: '',
   styleNotes: '',
@@ -92,11 +85,41 @@ const fieldLabels = {
   fullName: 'Full Name',
   email: 'Email Address',
   whatsappNumber: 'WhatsApp Number',
-  gender: 'Gender',
+  garmentFor: 'Garment For',
   outfitType: 'Outfit Type',
   orderType: 'Order Type',
 }
 
+function MeasurementInput({ error, label, onChange, onUnitChange, unit, value }) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]">{label}</span>
+      <div className={`mt-3 grid grid-cols-[minmax(0,1fr)_6.5rem] overflow-hidden rounded-2xl border bg-black/40 transition focus-within:border-[var(--color-gold)] ${error ? 'border-red-300/60' : 'border-white/10'}`}>
+        <input aria-label={`${label} measurement`} className="min-w-0 bg-transparent px-4 py-3.5 text-white outline-none placeholder:text-white/30" inputMode="decimal" min="0" onChange={(event) => onChange(label, event.target.value)} placeholder="0.0" step="0.1" type="number" value={value || ''} />
+        <select aria-label={`${label} unit`} className="border-l border-white/10 bg-black/70 px-3 text-sm text-white outline-none" onChange={(event) => onUnitChange(event.target.value)} value={unit}>
+          <option value="cm">cm</option><option value="inches">inches</option>
+        </select>
+      </div>
+      {error ? <p className="mt-2 text-sm text-red-200">{error}</p> : null}
+    </label>
+  )
+}
+
+function MeasurementProfile({ errors, formData, onMeasurementChange, onUnitChange }) {
+  const groups = measurementProfiles[formData.garmentFor] || []
+  return (
+    <motion.div animate={{ opacity: 1, y: 0 }} className="mt-6 grid gap-5 lg:grid-cols-2" initial={{ opacity: 0, y: 12 }} key={formData.garmentFor} transition={{ duration: 0.3, ease: 'easeOut' }}>
+      {groups.map((group) => (
+        <section className="rounded-2xl border border-white/10 bg-black/25 p-4 sm:p-5" key={group.title}>
+          <h3 className="font-serif text-xl text-white">{group.title}</h3>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {group.fields.map((field) => <MeasurementInput error={errors[`measurement.${field}`]} key={field} label={field} onChange={onMeasurementChange} onUnitChange={onUnitChange} unit={formData.measurementUnit} value={formData.measurements[field]} />)}
+          </div>
+        </section>
+      ))}
+    </motion.div>
+  )
+}
 function TextField({
   error,
   label,
@@ -268,6 +291,20 @@ function CustomOrder() {
     }))
   }
 
+  const selectGarmentFor = (garmentFor) => {
+    setFormData((current) => ({ ...current, garmentFor, measurements: current.garmentFor === garmentFor ? current.measurements : {} }))
+    setErrors((current) => ({ ...current, garmentFor: '', measurements: '' }))
+    setSuccessOrder(null)
+  }
+
+  const updateMeasurement = (name, value) => {
+    if (value !== '' && Number(value) < 0) return
+    setFormData((current) => ({ ...current, measurements: { ...current.measurements, [name]: value } }))
+    setErrors((current) => ({ ...current, measurements: '', [`measurement.${name}`]: '' }))
+  }
+
+  const updateMeasurementUnit = (measurementUnit) => setFormData((current) => ({ ...current, measurementUnit }))
+
   const validateForm = () => {
     const nextErrors = {}
 
@@ -280,6 +317,13 @@ function CustomOrder() {
     if (formData.email && !/^\S+@\S+\.\S+$/.test(formData.email)) {
       nextErrors.email = 'Please enter a valid email address.'
     }
+
+    const enteredMeasurements = Object.entries(formData.measurements).filter(([, value]) => value !== '')
+    if (!enteredMeasurements.length) nextErrors.measurements = 'Enter at least one measurement.'
+    enteredMeasurements.forEach(([name, value]) => {
+      const numericValue = Number(value)
+      if (!Number.isFinite(numericValue) || numericValue < 0) nextErrors[`measurement.${name}`] = 'Enter a valid positive measurement.'
+    })
 
     setErrors(nextErrors)
     const isValid = Object.keys(nextErrors).length === 0
@@ -294,21 +338,17 @@ function CustomOrder() {
   const buildCustomOrderFormData = () => {
     const requestData = new FormData()
     const measurements = {
-      chestBust: formData.chestBust,
-      waist: formData.waist,
-      hip: formData.hip,
-      shoulder: formData.shoulder,
-      sleeveLength: formData.sleeveLength,
-      topLength: formData.topLength,
-      trouserSkirtLength: formData.trouserSkirtLength,
-      height: formData.height,
-      additionalNotes: formData.additionalNotes,
+      gender: formData.garmentFor,
+      unit: formData.measurementUnit,
+      fields: Object.entries(formData.measurements)
+        .filter(([, value]) => value !== '')
+        .map(([name, value]) => ({ name, value: Number(value) })),
     }
 
     requestData.append('fullName', formData.fullName)
     requestData.append('email', formData.email)
     requestData.append('whatsappNumber', formData.whatsappNumber)
-    requestData.append('gender', formData.gender)
+    requestData.append('gender', formData.garmentFor === 'Male' ? 'Men' : 'Women')
     requestData.append('outfitType', formData.outfitType)
     requestData.append('orderType', formData.orderType)
     requestData.append('fabricPreference', formData.fabricPreference)
@@ -377,7 +417,7 @@ function CustomOrder() {
             Create a Piece Made for You
           </h1>
           <p className="mt-7 max-w-3xl text-base leading-8 text-[var(--color-muted)] sm:text-lg">
-            Share your style, measurements, fabric preference, occasion, and delivery location.
+            Share your style, measurements, fabric preference, occasion, and preferred deadline.
             Nebeda Threads will guide you through creating a garment that feels personal, elegant,
             and timeless.
           </p>
@@ -445,15 +485,23 @@ function CustomOrder() {
                 Order Details
               </p>
               <div className="mt-6 grid gap-5 md:grid-cols-2">
-                <SelectField
-                  error={errors.gender}
-                  label="Gender"
-                  name="gender"
-                  onChange={updateField}
-                  options={selectOptions.gender}
-                  required
-                  value={formData.gender}
-                />
+                <fieldset className="md:col-span-2">
+                  <legend className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">Garment For *</legend>
+                  <div className={`mt-3 grid grid-cols-2 gap-2 rounded-2xl border p-1.5 ${errors.garmentFor ? 'border-red-300/60' : 'border-white/10'}`}>
+                    {['Male', 'Female'].map((option) => (
+                      <button
+                        aria-pressed={formData.garmentFor === option}
+                        className={`min-h-12 rounded-xl px-4 py-3 text-sm font-semibold transition ${formData.garmentFor === option ? 'bg-[var(--color-gold)] text-black shadow-[0_10px_30px_rgba(190,151,83,0.22)]' : 'text-white/68 hover:bg-white/[0.06] hover:text-white'}`}
+                        key={option}
+                        onClick={() => selectGarmentFor(option)}
+                        type="button"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.garmentFor ? <p className="mt-2 text-sm text-red-200">{errors.garmentFor}</p> : null}
+                </fieldset>
                 <SelectField
                   error={errors.outfitType}
                   label="Outfit Type"
@@ -497,39 +545,21 @@ function CustomOrder() {
             </div>
 
             <div className="mt-8 border-t border-white/10 pt-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-gold)]">
-                Measurements
-              </p>
-              <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                {[
-                  ['chestBust', 'Chest/Bust'],
-                  ['waist', 'Waist'],
-                  ['hip', 'Hip'],
-                  ['shoulder', 'Shoulder'],
-                  ['sleeveLength', 'Sleeve Length'],
-                  ['topLength', 'Top Length'],
-                  ['trouserSkirtLength', 'Trouser/Skirt Length'],
-                  ['height', 'Height'],
-                ].map(([name, label]) => (
-                  <TextField
-                    key={name}
-                    label={label}
-                    name={name}
-                    onChange={updateField}
-                    placeholder="cm / inches"
-                    value={formData[name]}
-                  />
-                ))}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-gold)]">Measurements</p>
+                  <p className="mt-2 text-sm text-white/48">Enter only the measurements you know. All fields use the same selected unit.</p>
+                </div>
+                {formData.garmentFor ? <span className="text-sm text-white/58">{formData.garmentFor} profile</span> : null}
               </div>
-              <div className="mt-5">
-                <TextAreaField
-                  label="Additional Notes"
-                  name="additionalNotes"
-                  onChange={updateField}
-                  placeholder="Add size context, preferred fit, or request measurement guidance."
-                  value={formData.additionalNotes}
-                />
-              </div>
+              {formData.garmentFor ? (
+                <MeasurementProfile errors={errors} formData={formData} onMeasurementChange={updateMeasurement} onUnitChange={updateMeasurementUnit} />
+              ) : (
+                <div className={`mt-6 rounded-2xl border border-dashed p-6 text-center text-sm ${errors.measurements ? 'border-red-300/60 text-red-100' : 'border-white/15 text-[var(--color-muted)]'}`}>
+                  Select Male or Female under Garment For to begin measurements.
+                </div>
+              )}
+              {errors.measurements && formData.garmentFor ? <p className="mt-4 text-sm text-red-200">{errors.measurements}</p> : null}
             </div>
 
             <div className="mt-8 border-t border-white/10 pt-8">

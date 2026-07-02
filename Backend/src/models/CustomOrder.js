@@ -36,8 +36,20 @@ const imageSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const measurementFieldSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    value: { type: Number, required: true, min: 0 },
+  },
+  { _id: false }
+);
+
 const measurementsSchema = new mongoose.Schema(
   {
+    gender: { type: String, enum: ["Male", "Female"] },
+    unit: { type: String, enum: ["cm", "inches"], default: "cm" },
+    fields: { type: [measurementFieldSchema], default: undefined },
+    // Legacy fields remain readable while existing records are migrated naturally.
     chestBust: { type: String, trim: true },
     waist: { type: String, trim: true },
     hip: { type: String, trim: true },
@@ -123,7 +135,7 @@ const customOrderSchema = new mongoose.Schema(
     styleNotes: { type: String, trim: true },
     measurements: {
       type: measurementsSchema,
-      default: {},
+      required: [true, "Measurements are required"],
     },
     shipping: {
       type: shippingSchema,

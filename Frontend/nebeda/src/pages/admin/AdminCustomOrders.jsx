@@ -6,6 +6,9 @@ import Button from '../../components/ui/Button'
 import { useToast } from '../../components/ui/toastContext'
 import { logoutAdmin } from '../../services/authService'
 import { archiveCustomOrder, getAdminCustomOrders, updateCustomOrder } from '../../services/customOrderService'
+import MeasurementTable from '../../components/custom-order/MeasurementTable'
+import formatOrderReference from '../../utils/orderReference'
+import { downloadMeasurementPdf, printMeasurementSheet } from '../../utils/measurementSheet'
 
 const orderStatuses = ['All', 'New', 'Reviewed', 'In Progress', 'Awaiting Payment', 'Paid', 'Completed', 'Cancelled']
 const paymentStatuses = ['All', 'Pending', 'Paid', 'Failed', 'Refunded']
@@ -109,6 +112,23 @@ function AdminCustomOrders() {
     }
   }
 
+  const handlePrintMeasurements = () => {
+    try {
+      printMeasurementSheet(selectedOrder)
+    } catch (printError) {
+      showToast({ message: printError.message || 'Unable to open the print view.', type: 'error' })
+    }
+  }
+
+  const handleDownloadMeasurements = async () => {
+    try {
+      await downloadMeasurementPdf(selectedOrder)
+      showToast({ message: 'Measurement PDF downloaded.', type: 'success' })
+    } catch (pdfError) {
+      showToast({ message: pdfError.message || 'Unable to create the measurement PDF.', type: 'error' })
+    }
+  }
+
   const confirmArchive = async () => {
     try {
       await archiveCustomOrder(orderToArchive._id)
@@ -168,15 +188,22 @@ function AdminCustomOrders() {
         <section className="mt-8 rounded-[1.75rem] border border-[rgba(190,151,83,0.38)] bg-white/[0.045] p-5 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--color-gold)]">Custom Order Details</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--color-gold)]">{formatOrderReference(selectedOrder._id, 'NTC')}</p>
               <h3 className="mt-3 font-serif text-3xl text-white">{selectedOrder.fullName}</h3>
             </div>
-            <Button onClick={() => setSelectedOrder(null)} variant="outline">Close</Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+              <Button onClick={handlePrintMeasurements} variant="outline">Print Measurements</Button>
+              <Button onClick={handleDownloadMeasurements} variant="outline">Download PDF</Button>
+              <Button onClick={() => setSelectedOrder(null)} variant="outline">Close</Button>
+            </div>
           </div>
-          <div className="mt-8 grid gap-6 lg:grid-cols-3">
-            <p className="text-sm leading-7 text-[var(--color-muted)]">Email: {selectedOrder.email}<br />WhatsApp: {selectedOrder.whatsappNumber}<br />Outfit: {selectedOrder.outfitType}<br />Fabric: {selectedOrder.fabricPreference}<br />Occasion: {selectedOrder.occasion}</p>
-            <p className="text-sm leading-7 text-[var(--color-muted)]">Shipping: {selectedOrder.shipping?.shippingCountry}<br />Address: {selectedOrder.shipping?.addressLine1}<br />City: {selectedOrder.shipping?.city}<br />Country: {selectedOrder.shipping?.country}</p>
-            <p className="text-sm leading-7 text-[var(--color-muted)]">Style Notes: {selectedOrder.styleNotes || 'Not provided'}<br />Admin Notes: {selectedOrder.adminNotes || 'Not provided'}</p>
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
+            <p className="break-words text-sm leading-7 text-[var(--color-muted)]">Email: {selectedOrder.email}<br />WhatsApp: {selectedOrder.whatsappNumber}<br />Outfit: {selectedOrder.outfitType}<br />Garment for: {selectedOrder.measurements?.gender || selectedOrder.gender}<br />Fabric: {selectedOrder.fabricPreference}<br />Occasion: {selectedOrder.occasion}<br />Requested: {formatDate(selectedOrder.createdAt)}</p>
+            <p className="break-words text-sm leading-7 text-[var(--color-muted)]">Special Instructions: {selectedOrder.styleNotes || 'Not provided'}<br />Admin Notes: {selectedOrder.adminNotes || 'Not provided'}</p>
+          </div>
+          <div className="mt-8 max-w-3xl">
+            <h4 className="mb-4 font-serif text-2xl text-white">Measurements</h4>
+            <MeasurementTable measurements={selectedOrder.measurements} fallbackGender={selectedOrder.gender} />
           </div>
           {selectedOrder.inspirationImages?.length ? (
             <div className="mt-8 grid gap-4 sm:grid-cols-3">

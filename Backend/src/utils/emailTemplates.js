@@ -8,7 +8,7 @@ const escapeHtml = (value = "") =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-const formatCurrency = (value = 0) => `£${Number(value || 0).toFixed(2)}`;
+const formatCurrency = (value = 0) => `Â£${Number(value || 0).toFixed(2)}`;
 const formatOrderCurrency = (order) =>
   new Intl.NumberFormat(order.currency === "EUR" ? "en-IE" : "en-GB", {
     style: "currency",
@@ -98,7 +98,7 @@ const customOrderConfirmationEmail = (order) => ({
   ...wrapEmail(
     "Custom Order Request Received",
     `<p>Thank you ${escapeHtml(getFirstName(order.fullName))}. Nebeda Threads has received your custom order request.</p>
-     <p>We will review your design, measurements, delivery details, and contact you to confirm next steps.</p>
+     <p>We will review your design, measurements, fabric preferences, and contact you to confirm next steps.</p>
      <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>`
   ),
 });
@@ -271,7 +271,7 @@ const customOrderQuoteReadyEmail = (order) => ({
     `<p>Hello ${escapeHtml(getFirstName(order.fullName))},</p>
      <p>Your bespoke request has been reviewed and a quote is ready.</p>
      <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
-     <p><strong>Estimated price:</strong> £${Number(order.estimatedPrice || 0).toFixed(2)}</p>
+     <p><strong>Estimated price:</strong> Â£${Number(order.estimatedPrice || 0).toFixed(2)}</p>
      ${actionButton("View Custom Order", "https://nebedathreads.co.uk/account/custom-orders/" + order._id)}
      <p>We will confirm the final design, delivery, and payment details with you before production.</p>`
   ),
@@ -286,7 +286,7 @@ const customOrderPaymentReceivedEmail = (order) => ({
     `<p>Hello ${escapeHtml(getFirstName(order.fullName))},</p>
      <p>Your payment has been received and your bespoke order can now move into production.</p>
      <p><strong>Reference:</strong> ${escapeHtml(order._id)}</p>
-     <p><strong>Amount paid:</strong> £${Number(order.estimatedPrice || 0).toFixed(2)}</p>
+     <p><strong>Amount paid:</strong> Â£${Number(order.estimatedPrice || 0).toFixed(2)}</p>
      ${actionButton("View Custom Order", "https://nebedathreads.co.uk/account/custom-orders/" + order._id)}`
   ),
 });
@@ -300,7 +300,7 @@ const customOrderPaidNotificationEmail = (order) => ({
     "Custom Order Payment Received",
     `<p><strong>Customer:</strong> ${escapeHtml(order.fullName)}</p>
      <p><strong>Reference:</strong> ${escapeHtml(order._id)}</p>
-     <p><strong>Amount:</strong> £${Number(order.estimatedPrice || 0).toFixed(2)}</p>`
+     <p><strong>Amount:</strong> Â£${Number(order.estimatedPrice || 0).toFixed(2)}</p>`
   ),
 });
 const customOrderStatusUpdateEmail = (order) => ({
