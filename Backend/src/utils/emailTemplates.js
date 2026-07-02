@@ -8,7 +8,7 @@ const escapeHtml = (value = "") =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-const formatCurrency = (value = 0) => `Â£${Number(value || 0).toFixed(2)}`;
+const formatCurrency = (value = 0, currency = "GBP") => new Intl.NumberFormat(currency === "EUR" ? "en-IE" : "en-GB", { style: "currency", currency }).format(Number(value || 0));
 const formatOrderCurrency = (order) =>
   new Intl.NumberFormat(order.currency === "EUR" ? "en-IE" : "en-GB", {
     style: "currency",
@@ -152,7 +152,7 @@ const orderReceivedEmail = (order) => ({
     "Order Received",
     `<p>Thank you ${escapeHtml(getFirstName(order.customer.fullName))}. Your Nebeda Threads order has been received.</p>
      <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
-     <p><strong>Total:</strong> ${formatCurrency(order.totals.total)}</p>
+     <p><strong>Total:</strong> ${formatOrderCurrency(order)}</p>
      <p>Continue to secure Stripe Checkout to complete payment. Your order will be confirmed after payment succeeds.</p>`
   ),
 });
@@ -167,7 +167,7 @@ const orderNotificationEmail = (order) => ({
     `<p><strong>Customer:</strong> ${escapeHtml(order.customer.fullName)}</p>
      <p><strong>Email:</strong> ${escapeHtml(order.customer.email)}</p>
      <p><strong>Items:</strong> ${order.items.length}</p>
-     <p><strong>Total:</strong> ${formatCurrency(order.totals.total)}</p>
+     <p><strong>Total:</strong> ${formatOrderCurrency(order)}</p>
      <p><strong>Status:</strong> ${escapeHtml(order.orderStatus)} / ${escapeHtml(order.paymentStatus)}</p>`
   ),
 });
@@ -271,7 +271,7 @@ const customOrderQuoteReadyEmail = (order) => ({
     `<p>Hello ${escapeHtml(getFirstName(order.fullName))},</p>
      <p>Your bespoke request has been reviewed and a quote is ready.</p>
      <p><strong>Order reference:</strong> ${escapeHtml(order._id)}</p>
-     <p><strong>Estimated price:</strong> Â£${Number(order.estimatedPrice || 0).toFixed(2)}</p>
+     <p><strong>Estimated price:</strong> ${formatCurrency(order.estimatedPrice)}</p>
      ${actionButton("View Custom Order", "https://nebedathreads.co.uk/account/custom-orders/" + order._id)}
      <p>We will confirm the final design, delivery, and payment details with you before production.</p>`
   ),
@@ -286,7 +286,7 @@ const customOrderPaymentReceivedEmail = (order) => ({
     `<p>Hello ${escapeHtml(getFirstName(order.fullName))},</p>
      <p>Your payment has been received and your bespoke order can now move into production.</p>
      <p><strong>Reference:</strong> ${escapeHtml(order._id)}</p>
-     <p><strong>Amount paid:</strong> Â£${Number(order.estimatedPrice || 0).toFixed(2)}</p>
+     <p><strong>Amount paid:</strong> ${formatCurrency(order.estimatedPrice)}</p>
      ${actionButton("View Custom Order", "https://nebedathreads.co.uk/account/custom-orders/" + order._id)}`
   ),
 });
@@ -300,7 +300,7 @@ const customOrderPaidNotificationEmail = (order) => ({
     "Custom Order Payment Received",
     `<p><strong>Customer:</strong> ${escapeHtml(order.fullName)}</p>
      <p><strong>Reference:</strong> ${escapeHtml(order._id)}</p>
-     <p><strong>Amount:</strong> Â£${Number(order.estimatedPrice || 0).toFixed(2)}</p>`
+     <p><strong>Amount:</strong> ${formatCurrency(order.estimatedPrice)}</p>`
   ),
 });
 const customOrderStatusUpdateEmail = (order) => ({

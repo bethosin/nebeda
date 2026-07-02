@@ -12,6 +12,7 @@ import {
   orderStatusUpdateEmail,
 } from "../utils/emailTemplates.js";
 import { EMAIL_DELIVERY_WARNING, sendEmailSafely } from "../utils/sendEmail.js";
+import { ensureCheckoutPrice } from "../utils/productPricing.js";
 
 const validateEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
 
@@ -68,7 +69,7 @@ const createOrder = asyncHandler(async (req, res) => {
   const products = await Product.find({
     _id: { $in: productIds },
     isActive: true,
-  }).lean();
+  });
   const productsById = new Map(products.map((product) => [product._id.toString(), product]));
 
   if (products.length !== productIds.length) {
@@ -76,25 +77,67 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new Error("One or more products are unavailable. Please refresh your cart.");
   }
 
+  await Promise.all(products.map((product) => ensureCheckoutPrice(product)));
+
+  const requestedByProduct = payload.items.reduce((totals, item) => {
+    totals.set(item.productId, (totals.get(item.productId) || 0) + Number(item.quantity));
+    return totals;
+  }, new Map());
+
+  for (const product of products) {
+    if (product.trackInventory && requestedByProduct.get(product._id.toString()) > product.inventory) {
+      res.status(409);
+      throw new Error(`${product.name} does not have enough stock for this order.`);
+    }
+  }
+
   const items = payload.items.map((item) => {
     const product = productsById.get(item.productId);
-    const numericPrice = Number(product.numericPrice);
+    const priceAmount = Number(product.priceAmount);
     const quantity = Number(item.quantity);
+    const selectedSize = String(item.selectedSize || "").trim();
+    const selectedColour = String(item.selectedColour || "").trim();
 
-    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+    if (product.isQuoteOnly) {
       res.status(400);
-      throw new Error(`${product.name} does not have a valid checkout price.`);
+      throw new Error(`${product.name} requires a custom quote and cannot be paid for directly.`);
+    }
+    if (!Number.isFinite(priceAmount) || priceAmount <= 0) {
+      res.status(400);
+      throw new Error("Product price is not configured. Please contact Nebeda Threads.");
+    }
+    if (product.sizes.length && (!selectedSize || !product.sizes.includes(selectedSize))) {
+      res.status(400);
+      throw new Error(`Please select an available size for ${product.name}.`);
+    }
+    if (product.colors.length && (!selectedColour || !product.colors.includes(selectedColour))) {
+      res.status(400);
+      throw new Error(`Please select an available colour for ${product.name}.`);
+    }
+
+    const selectedVariation = product.variations?.find(
+      (variation) =>
+        variation.isActive !== false &&
+        (!variation.size || variation.size === selectedSize) &&
+        (!variation.color || variation.color === selectedColour),
+    );
+    if (selectedVariation && Number.isFinite(selectedVariation.stock) && selectedVariation.stock < quantity) {
+      res.status(409);
+      throw new Error(`The selected ${product.name} variation is out of stock.`);
     }
 
     return {
       product: product._id,
       name: product.name,
       image: product.mainImage?.url || product.images?.[0]?.url || "",
-      price: product.price,
-      numericPrice,
-      currency: product.currency === "EUR" ? "EUR" : "GBP",
+      price: product.displayPrice || product.price,
+      priceAmount,
+      numericPrice: priceAmount,
+      currency: product.currency,
+      selectedSize: selectedSize || undefined,
+      selectedColour: selectedColour || undefined,
       quantity,
-      subtotal: numericPrice * quantity,
+      subtotal: priceAmount * quantity,
     };
   });
   const orderCurrencies = new Set(items.map((item) => item.currency));

@@ -1,9 +1,20 @@
-const CART_STORAGE_KEY = 'nebedaCart'
+﻿const CART_STORAGE_KEY = 'nebedaCart'
+
+function getCartItemId(productId, selectedSize = '', selectedColour = '') {
+  return [productId, selectedSize || '-', selectedColour || '-'].join('::')
+}
 
 function loadStoredCart() {
   try {
     const storedCart = localStorage.getItem(CART_STORAGE_KEY)
-    return storedCart ? JSON.parse(storedCart) : []
+    const items = storedCart ? JSON.parse(storedCart) : []
+    if (!Array.isArray(items)) return []
+    return items.filter((item) => item?.productId).map((item) => ({
+      ...item,
+      cartItemId: item.cartItemId || getCartItemId(item.productId, item.selectedSize, item.selectedColour),
+      selectedSize: item.selectedSize || '',
+      selectedColour: item.selectedColour || '',
+    }))
   } catch {
     return []
   }
@@ -14,16 +25,12 @@ function saveStoredCart(cartItems) {
 }
 
 function parsePriceValue(product) {
-  if (typeof product.numericPrice === 'number' && product.numericPrice > 0) {
-    return product.numericPrice
+  for (const candidate of [product.priceAmount, product.numericPrice]) {
+    const amount = Number(candidate)
+    if (Number.isFinite(amount) && amount > 0) return amount
   }
-
-  const priceText = String(product.price || '')
-  const match = priceText.match(/(\d+(?:\.\d+)?)/)
+  const match = String(product.price || product.displayPrice || '').replace(/,/g, '').match(/(\d+(?:\.\d+)?)/)
   return match ? Number(match[1]) : 0
 }
 
-// Future backend cart syncing can be added here without changing UI components.
-// Example later: syncCartToBackend(cartItems), loadCartFromBackend(), mergeGuestCart().
-
-export { CART_STORAGE_KEY, loadStoredCart, parsePriceValue, saveStoredCart }
+export { CART_STORAGE_KEY, getCartItemId, loadStoredCart, parsePriceValue, saveStoredCart }

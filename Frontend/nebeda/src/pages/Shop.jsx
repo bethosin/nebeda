@@ -20,6 +20,11 @@ function getProductImage(product) {
 }
 
 function ProductCard({ product, index, onAddToCart }) {
+  const [selectedSize, setSelectedSize] = useState('')
+  const [selectedColour, setSelectedColour] = useState('')
+  const isQuoteOnly = product.isQuoteOnly === true
+  const isOutOfStock = product.trackInventory && Number(product.inventory) <= 0
+
   return (
     <motion.article
       className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-[rgba(255,255,255,0.045)] shadow-[0_24px_80px_rgba(0,0,0,0.32)] transition duration-500 hover:-translate-y-1 hover:border-[rgba(190,151,83,0.66)] hover:shadow-[0_30px_90px_rgba(190,151,83,0.14)]"
@@ -48,7 +53,7 @@ function ProductCard({ product, index, onAddToCart }) {
         <div className="mt-3 flex items-start justify-between gap-4">
           <h3 className="min-w-0 font-serif text-2xl leading-tight text-white">{product.name}</h3>
           <p className="shrink-0 whitespace-nowrap text-sm font-semibold text-[var(--color-cream)]">
-            {product.price}
+            {product.displayPrice || product.price}
           </p>
         </div>
 
@@ -56,14 +61,33 @@ function ProductCard({ product, index, onAddToCart }) {
           {product.shortDescription || product.description}
         </p>
 
+        {!isQuoteOnly && (product.sizes?.length || product.colors?.length) ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {product.sizes?.length ? (
+              <label className="text-xs font-semibold uppercase tracking-[.16em] text-white/58">Size
+                <select className="mt-2 w-full rounded-xl border border-white/10 bg-black/55 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none focus:border-[var(--color-gold)]" onChange={(event) => setSelectedSize(event.target.value)} value={selectedSize}>
+                  <option value="">Select size</option>{product.sizes.map((size) => <option key={size} value={size}>{size}</option>)}
+                </select>
+              </label>
+            ) : null}
+            {product.colors?.length ? (
+              <label className="text-xs font-semibold uppercase tracking-[.16em] text-white/58">Colour
+                <select className="mt-2 w-full rounded-xl border border-white/10 bg-black/55 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none focus:border-[var(--color-gold)]" onChange={(event) => setSelectedColour(event.target.value)} value={selectedColour}>
+                  <option value="">Select colour</option>{product.colors.map((colour) => <option key={colour} value={colour}>{colour}</option>)}
+                </select>
+              </label>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <Button
-            className="px-4 py-2.5 text-[11px]"
-            onClick={() => onAddToCart(product)}
-            variant="outline"
-          >
-            Add to Cart
-          </Button>
+          {isQuoteOnly ? (
+            <Button className="px-4 py-2.5 text-[11px]" to="/custom-order" variant="outline">Request Quote</Button>
+          ) : isOutOfStock ? (
+            <Button className="px-4 py-2.5 text-[11px]" disabled variant="outline">Out of Stock</Button>
+          ) : (
+            <Button className="px-4 py-2.5 text-[11px]" onClick={() => onAddToCart(product, { selectedColour, selectedSize })} variant="outline">Add to Cart</Button>
+          )}
           <Button
             className="px-4 py-2.5 text-[11px]"
             href={getWhatsAppProductLink(product.name)}
@@ -133,7 +157,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 }
 
 function Shop() {
-  const { addToCart } = useCart()
+  const { addToCart, cartItems } = useCart()
   const { showToast } = useToast()
   const [activeFilter, setActiveFilter] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
@@ -189,8 +213,21 @@ function Shop() {
     setCurrentPage(1)
   }
 
-  const handleAddToCart = (product) => {
-    addToCart(product)
+  const handleAddToCart = (product, selection) => {
+    const cartCurrency = cartItems[0]?.currency
+    if (cartCurrency && cartCurrency !== product.currency) {
+      showToast({ message: 'GBP and EUR products must be checked out separately.', type: 'error' })
+      return
+    }
+    if (product.sizes?.length && !selection.selectedSize) {
+      showToast({ message: 'Please select a size before adding to cart.', type: 'error' })
+      return
+    }
+    if (product.colors?.length && !selection.selectedColour) {
+      showToast({ message: 'Please select a colour before adding to cart.', type: 'error' })
+      return
+    }
+    addToCart(product, selection)
     showToast({ message: 'Added to cart successfully.', type: 'success' })
   }
 

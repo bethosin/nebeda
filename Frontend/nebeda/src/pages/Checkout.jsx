@@ -10,8 +10,8 @@ import { getShippingOptions, getShippingQuote } from '../services/shippingServic
 import { getStoredUser, isUserAuthenticated } from '../services/userAuthService'
 import logEmailWarning from '../utils/emailDiagnostics'
 
-function formatAmount(value) {
-  return `£${Number(value || 0).toFixed(2)}`
+function formatAmount(value, currency = 'GBP') {
+  return new Intl.NumberFormat(currency === 'EUR' ? 'en-IE' : 'en-GB', { style: 'currency', currency }).format(Number(value || 0))
 }
 
 function getInitialForm() {
@@ -46,6 +46,7 @@ function Checkout() {
   const userLoggedIn = isUserAuthenticated()
   const storedUser = getStoredUser()
   const emailVerified = Boolean(storedUser?.isEmailVerified)
+  const cartCurrency = cartItems[0]?.currency === 'EUR' ? 'EUR' : 'GBP'
   const shippingCountries = shippingCatalog?.countries || ['United Kingdom']
   const selectedShipping = shippingQuote?.quote || null
   const availableShippingMethods = shippingQuote?.options || []
@@ -76,7 +77,7 @@ function Checkout() {
       country: formData.shippingCountry,
       subtotal,
       shippingMethod: formData.shippingMethod,
-      currency: 'GBP',
+      currency: cartCurrency,
     })
       .then((data) => {
         if (!active) return
@@ -99,7 +100,7 @@ function Checkout() {
     return () => {
       active = false
     }
-  }, [formData.shippingCountry, formData.shippingMethod, subtotal])
+  }, [cartCurrency, formData.shippingCountry, formData.shippingMethod, subtotal])
 
   if (!cartItems.length && !createdOrder) {
     return <Navigate replace to="/cart" />
@@ -377,7 +378,7 @@ function Checkout() {
                       >
                         {availableShippingMethods.map((method) => (
                           <option className="bg-black" key={method.methodCode} value={method.methodCode}>
-                            {method.shippingMethod} - {formatAmount(method.shippingCost)}
+                            {method.shippingMethod} - {formatAmount(method.shippingCost, cartCurrency)}
                           </option>
                         ))}
                       </select>
@@ -390,7 +391,7 @@ function Checkout() {
                         </p>
                         {selectedShipping ? (
                           <p className="mt-1 text-sm leading-6 text-white/58">
-                            {shippingCost === 0 ? 'Free' : formatAmount(shippingCost)}
+                            {shippingCost === 0 ? 'Free' : formatAmount(shippingCost, cartCurrency)}
                             {' - '}
                             {selectedShipping.estimatedDelivery}
                           </p>
@@ -450,13 +451,14 @@ function Checkout() {
               </p>
               <div className="mt-6 space-y-4">
                 {cartItems.map((item) => (
-                  <div className="flex gap-3 border-b border-white/10 pb-4 last:border-b-0" key={item.productId}>
+                  <div className="flex gap-3 border-b border-white/10 pb-4 last:border-b-0" key={item.cartItemId || item.productId}>
                     <img alt={item.name} className="size-16 rounded-xl object-cover" src={item.image} />
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-sm font-semibold text-white">{item.name}</p>
                       <p className="mt-1 text-xs text-white/52">Quantity: {item.quantity}</p>
+                      {(item.selectedColour || item.selectedSize) ? <p className="mt-1 text-xs text-white/52">{[item.selectedColour && `Colour: ${item.selectedColour}`, item.selectedSize && `Size: ${item.selectedSize}`].filter(Boolean).join(' · ')}</p> : null}
                       <p className="mt-1 text-xs text-[var(--color-gold)]">
-                        {formatAmount(item.numericPrice * item.quantity)}
+                        {formatAmount((item.priceAmount ?? item.numericPrice) * item.quantity, item.currency || cartCurrency)}
                       </p>
                     </div>
                   </div>
@@ -464,7 +466,7 @@ function Checkout() {
               </div>
               <div className="mt-6 space-y-4 border-t border-white/10 pt-6">
                 <div className="flex justify-between text-sm"><span className="text-white/58">Products</span><span>{totalItems}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-white/58">Subtotal</span><span>{formatAmount(subtotal)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-white/58">Subtotal</span><span>{formatAmount(subtotal, cartCurrency)}</span></div>
                 <div className="flex items-start justify-between gap-4 text-sm">
                   <span className="text-white/58">Delivery</span>
                   <span className="text-right">
@@ -474,10 +476,10 @@ function Checkout() {
                         ? 'Calculating...'
                         : shippingCost === 0
                           ? 'Free'
-                          : formatAmount(shippingCost)}
+                          : formatAmount(shippingCost, cartCurrency)}
                   </span>
                 </div>
-                <div className="flex justify-between text-base font-semibold"><span>Total</span><span className="text-[var(--color-gold)]">{formatAmount(checkoutTotal)}</span></div>
+                <div className="flex justify-between text-base font-semibold"><span>Total</span><span className="text-[var(--color-gold)]">{formatAmount(checkoutTotal, cartCurrency)}</span></div>
               </div>
               <Button className="mt-7 w-full" disabled={isSubmitting || isShippingLoading || shippingQuoteRequired || !selectedShipping} type="submit" variant="primary">
                 {isSubmitting ? 'Preparing Secure Payment...' : 'Proceed to Secure Payment'}

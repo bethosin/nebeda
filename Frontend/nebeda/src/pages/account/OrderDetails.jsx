@@ -7,6 +7,7 @@ import { useToast } from '../../components/ui/toastContext'
 import { getMyOrderById } from '../../services/accountService'
 import { createCheckoutSession } from '../../services/paymentService'
 import formatOrderReference from '../../utils/orderReference'
+import { downloadInvoicePdf, printInvoice } from '../../utils/invoice'
 
 function formatAmount(value, currency = 'GBP') {
   return new Intl.NumberFormat(currency === 'EUR' ? 'en-IE' : 'en-GB', {
@@ -36,6 +37,23 @@ function OrderDetails() {
     return () => { active = false }
   }, [id])
 
+  const handlePrintInvoice = () => {
+    try {
+      printInvoice(order)
+    } catch (invoiceError) {
+      showToast({ message: invoiceError.message || 'Unable to open invoice.', type: 'error' })
+    }
+  }
+
+  const handleDownloadInvoice = async () => {
+    try {
+      await downloadInvoicePdf(order)
+      showToast({ message: 'Invoice downloaded.', type: 'success' })
+    } catch (invoiceError) {
+      showToast({ message: invoiceError.message || 'Unable to download invoice.', type: 'error' })
+    }
+  }
+
   const completePayment = async () => {
     setIsRedirecting(true)
     try {
@@ -61,8 +79,12 @@ function OrderDetails() {
           <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">{formatOrderReference(order._id)}</p>
             <h1 className="mt-3 font-serif text-4xl">{order.orderStatus}</h1>
-            <p className="mt-3 text-sm text-[var(--color-muted)]">Placed {formatDate(order.createdAt)} · Payment {order.paymentStatus}</p>
-            {canPay ? <Button className="mt-6" disabled={isRedirecting} onClick={completePayment}>{isRedirecting ? 'Opening Secure Payment...' : 'Complete Payment'}</Button> : null}
+            <p className="mt-3 text-sm text-[var(--color-muted)]">Placed {formatDate(order.createdAt)} / Payment {order.paymentStatus}</p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              {canPay ? <Button disabled={isRedirecting} onClick={completePayment}>{isRedirecting ? 'Opening Secure Payment...' : 'Complete Payment'}</Button> : null}
+              <Button onClick={handlePrintInvoice} variant="outline">View Invoice</Button>
+              <Button onClick={handleDownloadInvoice} variant="outline">Download Invoice</Button>
+            </div>
           </section>
 
           <OrderStatusTimeline
@@ -86,6 +108,7 @@ function OrderDetails() {
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold">{item.name}</p>
                       <p className="mt-1 text-sm text-[var(--color-muted)]">Quantity {item.quantity} · {item.price}</p>
+                      {(item.selectedColour || item.selectedSize) ? <p className="mt-1 text-xs text-white/48">{[item.selectedColour && `Colour: ${item.selectedColour}`, item.selectedSize && `Size: ${item.selectedSize}`].filter(Boolean).join(' · ')}</p> : null}
                     </div>
                     <p className="text-sm font-semibold text-[var(--color-gold)]">{formatAmount(item.subtotal, item.currency || order.currency)}</p>
                   </div>

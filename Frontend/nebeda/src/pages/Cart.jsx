@@ -2,8 +2,8 @@ import Button from '../components/ui/Button'
 import { useCart } from '../context/cartContextValue'
 import { useToast } from '../components/ui/toastContext'
 
-function formatAmount(value) {
-  return `£${Number(value || 0).toFixed(2)}`
+function formatAmount(value, currency = 'GBP') {
+  return new Intl.NumberFormat(currency === 'EUR' ? 'en-IE' : 'en-GB', { style: 'currency', currency }).format(Number(value || 0))
 }
 
 function Cart() {
@@ -17,19 +17,20 @@ function Cart() {
     totalItems,
   } = useCart()
   const { showToast } = useToast()
+  const cartCurrency = cartItems[0]?.currency === 'EUR' ? 'EUR' : 'GBP'
 
-  const removeItem = (productId) => {
-    removeFromCart(productId)
+  const removeItem = (cartItemId) => {
+    removeFromCart(cartItemId)
     showToast({ message: 'Removed from cart.', type: 'info' })
   }
 
-  const increaseItem = (productId) => {
-    increaseQuantity(productId)
+  const increaseItem = (cartItemId) => {
+    increaseQuantity(cartItemId)
     showToast({ message: 'Quantity updated.', type: 'success' })
   }
 
-  const decreaseItem = (productId) => {
-    decreaseQuantity(productId)
+  const decreaseItem = (cartItemId) => {
+    decreaseQuantity(cartItemId)
     showToast({ message: 'Quantity updated.', type: 'success' })
   }
 
@@ -75,7 +76,7 @@ function Cart() {
             {cartItems.map((item) => (
               <article
                 className="grid gap-5 rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-4 sm:grid-cols-[8rem_1fr] sm:p-5"
-                key={item.productId}
+                key={item.cartItemId}
               >
                 <img
                   alt={item.name}
@@ -87,6 +88,7 @@ function Cart() {
                     <div className="min-w-0">
                       <h2 className="break-words font-serif text-2xl text-white">{item.name}</h2>
                       <p className="mt-2 text-sm text-[var(--color-muted)]">{item.displayCategory}</p>
+                      {(item.selectedColour || item.selectedSize) ? <p className="mt-2 text-xs text-white/55">{[item.selectedColour && `Colour: ${item.selectedColour}`, item.selectedSize && `Size: ${item.selectedSize}`].filter(Boolean).join(' · ')}</p> : null}
                     </div>
                     <p className="shrink-0 font-semibold text-[var(--color-cream)]">{item.price}</p>
                   </div>
@@ -95,7 +97,7 @@ function Cart() {
                     <div className="flex w-fit items-center overflow-hidden rounded-full border border-white/10">
                       <button
                         className="grid size-11 place-items-center text-white/72 transition hover:bg-white/10 hover:text-[var(--color-gold)]"
-                        onClick={() => decreaseItem(item.productId)}
+                        onClick={() => decreaseItem(item.cartItemId)}
                         type="button"
                       >
                         -
@@ -105,7 +107,7 @@ function Cart() {
                       </span>
                       <button
                         className="grid size-11 place-items-center text-white/72 transition hover:bg-white/10 hover:text-[var(--color-gold)]"
-                        onClick={() => increaseItem(item.productId)}
+                        onClick={() => increaseItem(item.cartItemId)}
                         type="button"
                       >
                         +
@@ -113,9 +115,9 @@ function Cart() {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <p className="text-sm text-white/62">
-                        Subtotal: {formatAmount(item.numericPrice * item.quantity)}
+                        Subtotal: {formatAmount((item.priceAmount ?? item.numericPrice) * item.quantity, item.currency || cartCurrency)}
                       </p>
-                      <Button className="px-4 py-2 text-[10px]" onClick={() => removeItem(item.productId)} variant="outline">
+                      <Button className="px-4 py-2 text-[10px]" onClick={() => removeItem(item.cartItemId)} variant="outline">
                         Remove
                       </Button>
                     </div>
@@ -136,7 +138,7 @@ function Cart() {
               </div>
               <div className="flex justify-between gap-4 text-sm">
                 <span className="text-white/58">Subtotal</span>
-                <span className="font-semibold text-white">{formatAmount(subtotal)}</span>
+                <span className="font-semibold text-white">{formatAmount(subtotal, cartCurrency)}</span>
               </div>
               <div className="flex justify-between gap-4 text-sm">
                 <span className="text-white/58">Delivery</span>
@@ -144,7 +146,7 @@ function Cart() {
               </div>
               <div className="flex justify-between gap-4 text-base">
                 <span className="text-white">Total</span>
-                <span className="font-semibold text-[var(--color-gold)]">{formatAmount(subtotal)}</span>
+                <span className="font-semibold text-[var(--color-gold)]">{formatAmount(subtotal, cartCurrency)}</span>
               </div>
             </div>
             <div className="mt-6 flex flex-col gap-3">

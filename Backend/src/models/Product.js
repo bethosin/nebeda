@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
 
+import { normalizeProductPricing } from "../utils/productPricing.js";
+
 const storedCategories = ["Men", "Women", "Ready to Wear", "Bespoke", "Wedding"];
 const displayCategories = ["All", ...storedCategories];
 const genders = ["Men", "Women", "Couple", "Unisex"];
-const currencies = ["GBP", "EUR", "Custom"];
+const currencies = ["GBP", "EUR"];
 const badges = ["Ready to Wear", "Bespoke", "Wedding"];
 const stockTypes = ["Ready to Wear", "Made to Order", "Bespoke"];
 
@@ -24,6 +26,17 @@ const imageSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+  },
+  { _id: false }
+);
+
+const variationSchema = new mongoose.Schema(
+  {
+    size: { type: String, trim: true },
+    color: { type: String, trim: true },
+    stock: { type: Number, min: 0 },
+    image: { type: imageSchema },
+    isActive: { type: Boolean, default: true },
   },
   { _id: false }
 );
@@ -91,15 +104,18 @@ const productSchema = new mongoose.Schema(
       enum: genders,
       required: [true, "Gender is required"],
     },
-    price: {
-      type: String,
-      required: [true, "Product price is required"],
-      trim: true,
-    },
-    numericPrice: {
+    priceAmount: {
       type: Number,
-      min: [0, "Numeric price cannot be negative"],
+      min: [0.01, "Product price must be greater than zero"],
+      required() {
+        return !this.isQuoteOnly;
+      },
     },
+    displayPrice: { type: String, trim: true },
+    isQuoteOnly: { type: Boolean, default: false },
+    // Retained while legacy clients and existing records migrate to priceAmount.
+    price: { type: String, trim: true },
+    numericPrice: { type: Number, min: [0, "Numeric price cannot be negative"] },
     currency: {
       type: String,
       enum: currencies,
@@ -135,6 +151,8 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: [0, "Inventory cannot be negative"],
     },
+    trackInventory: { type: Boolean, default: false },
+    variations: { type: [variationSchema], default: [] },
     sizes: {
       type: [String],
       default: [],
@@ -170,7 +188,9 @@ productSchema.index({ categories: 1 });
 productSchema.index({ isActive: 1 });
 productSchema.index({ isFeatured: 1 });
 
-productSchema.pre("validate", function generateSlug() {
+productSchema.pre("validate", function normalizeProduct() {
+  normalizeProductPricing(this);
+
   if (!this.slug && this.name) {
     this.slug = slugify(this.name);
   }

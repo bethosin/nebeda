@@ -11,13 +11,15 @@ import {
   updateAdminOrderStatus,
   updateAdminPaymentStatus,
 } from '../../services/orderService'
+import formatOrderReference from '../../utils/orderReference'
+import { downloadInvoicePdf, printInvoice } from '../../utils/invoice'
 
 const orderStatuses = ['All', 'Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
 const fulfilmentStatuses = ['Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
 const paymentStatuses = ['All', 'Pending', 'Paid', 'Failed', 'Refunded']
 
-function formatAmount(value) {
-  return `£${Number(value || 0).toFixed(2)}`
+function formatAmount(value, currency = 'GBP') {
+  return new Intl.NumberFormat(currency === 'EUR' ? 'en-IE' : 'en-GB', { style: 'currency', currency }).format(Number(value || 0))
 }
 
 function formatDate(value) {
@@ -121,6 +123,23 @@ function AdminOrders() {
   const updateFilter = (event) => {
     const { name, value } = event.target
     setFilters((current) => ({ ...current, [name]: value }))
+  }
+
+  const handlePrintInvoice = () => {
+    try {
+      printInvoice(selectedOrder, { admin: true })
+    } catch (invoiceError) {
+      showToast({ message: invoiceError.message || 'Unable to open invoice.', type: 'error' })
+    }
+  }
+
+  const handleDownloadInvoice = async () => {
+    try {
+      await downloadInvoicePdf(selectedOrder, { admin: true })
+      showToast({ message: 'Invoice downloaded.', type: 'success' })
+    } catch (invoiceError) {
+      showToast({ message: invoiceError.message || 'Unable to download invoice.', type: 'error' })
+    }
   }
 
   const openOrder = (order) => {
@@ -255,7 +274,7 @@ function AdminOrders() {
                 <td className="break-all px-4 py-4 text-xs text-white/70">{order._id}</td>
                 <td className="px-4 py-4"><p className="font-semibold text-white">{order.customer?.fullName}</p><p className="mt-1 truncate text-xs text-[var(--color-muted)]">{order.customer?.email}</p></td>
                 <td className="px-4 py-4 text-white/70">{order.items?.length || 0}</td>
-                <td className="px-4 py-4 text-[var(--color-gold)]">{formatAmount(order.totals?.total)}</td>
+                <td className="px-4 py-4 text-[var(--color-gold)]">{formatAmount(order.totals?.total, order.currency)}</td>
                 <td className="px-4 py-4 text-white/70">{order.orderStatus}</td>
                 <td className="px-4 py-4 text-white/70">{order.paymentStatus}</td>
                 <td className="px-4 py-4 text-white/70">{formatDate(order.createdAt)}</td>
@@ -272,8 +291,8 @@ function AdminOrders() {
             <p className="break-all text-xs uppercase tracking-[0.18em] text-[var(--color-gold)]">{order._id}</p>
             <h3 className="mt-3 font-serif text-2xl text-white">{order.customer?.fullName}</h3>
             <p className="mt-2 text-sm text-[var(--color-muted)]">{order.customer?.email}</p>
-            <p className="mt-3 text-sm text-white/70">{order.items?.length || 0} items · {formatAmount(order.totals?.total)}</p>
-            <p className="mt-2 text-sm text-white/70">{order.orderStatus} · Payment {order.paymentStatus}</p>
+            <p className="mt-3 text-sm text-white/70">{order.items?.length || 0} items / {formatAmount(order.totals?.total, order.currency)}</p>
+            <p className="mt-2 text-sm text-white/70">{order.orderStatus} / Payment {order.paymentStatus}</p>
             <Button className="mt-5" onClick={() => openOrder(order)} variant="outline">View Details</Button>
           </article>
         ))}
@@ -287,7 +306,7 @@ function AdminOrders() {
         <section className="mt-8 rounded-[1.75rem] border border-[rgba(190,151,83,0.38)] bg-white/[0.045] p-5 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="break-all text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">Order {selectedOrder._id}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-gold)]">{formatOrderReference(selectedOrder._id)}</p>
               <h3 className="mt-3 font-serif text-3xl text-white">{selectedOrder.customer?.fullName}</h3>
             </div>
             <Button onClick={() => setSelectedOrder(null)} variant="outline">Close</Button>
@@ -331,9 +350,9 @@ function AdminOrders() {
             <div className="rounded-2xl border border-white/10 p-5">
               <p className="font-semibold text-white">Totals</p>
               <div className="mt-4 space-y-3 text-sm">
-                <p className="flex justify-between"><span className="text-[var(--color-muted)]">Subtotal</span><span>{formatAmount(selectedOrder.totals?.subtotal)}</span></p>
-                <p className="flex justify-between"><span className="text-[var(--color-muted)]">Delivery</span><span>{formatAmount(selectedOrder.totals?.deliveryFee)}</span></p>
-                <p className="flex justify-between font-semibold"><span>Total</span><span className="text-[var(--color-gold)]">{formatAmount(selectedOrder.totals?.total)}</span></p>
+                <p className="flex justify-between"><span className="text-[var(--color-muted)]">Subtotal</span><span>{formatAmount(selectedOrder.totals?.subtotal, selectedOrder.currency)}</span></p>
+                <p className="flex justify-between"><span className="text-[var(--color-muted)]">Delivery</span><span>{formatAmount(selectedOrder.totals?.deliveryFee, selectedOrder.currency)}</span></p>
+                <p className="flex justify-between font-semibold"><span>Total</span><span className="text-[var(--color-gold)]">{formatAmount(selectedOrder.totals?.total, selectedOrder.currency)}</span></p>
               </div>
             </div>
             <div className="rounded-2xl border border-white/10 p-5">
@@ -377,8 +396,9 @@ function AdminOrders() {
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-white">{item.name}</p>
                     <p className="text-sm text-[var(--color-muted)]">Qty {item.quantity} · Unit {item.price}</p>
+                    {(item.selectedColour || item.selectedSize) ? <p className="mt-1 text-xs text-white/48">{[item.selectedColour && `Colour: ${item.selectedColour}`, item.selectedSize && `Size: ${item.selectedSize}`].filter(Boolean).join(' · ')}</p> : null}
                   </div>
-                  <p className="text-[var(--color-gold)]">{formatAmount(item.subtotal)}</p>
+                  <p className="text-[var(--color-gold)]">{formatAmount(item.subtotal, item.currency || selectedOrder.currency)}</p>
                 </div>
               ))}
             </div>
@@ -411,7 +431,8 @@ function AdminOrders() {
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
             <Button disabled={isStatusSaving} onClick={saveStatus} variant="primary">{isStatusSaving ? 'Updating...' : 'Update Status'}</Button>
             <Button onClick={savePayment} variant="outline">Update Payment</Button>
-            <Button onClick={() => showToast({ message: 'Invoice printing will be added later.', type: 'info' })} variant="outline">Print Invoice</Button>
+            <Button onClick={handlePrintInvoice} variant="outline">Print Invoice</Button>
+            <Button onClick={handleDownloadInvoice} variant="outline">Download PDF</Button>
             <Button onClick={() => setOrderToArchive(selectedOrder)} variant="outline">Archive</Button>
           </div>
         </section>

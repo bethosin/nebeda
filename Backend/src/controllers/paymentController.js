@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { getStripeClient } from "../config/stripe.js";
 import CustomOrder from "../models/CustomOrder.js";
 import Order from "../models/Order.js";
+import Product from "../models/Product.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
   customOrderPaidNotificationEmail,
@@ -13,6 +14,7 @@ import {
   paymentFailedEmail,
 } from "../utils/emailTemplates.js";
 import { sendEmailSafely } from "../utils/sendEmail.js";
+import { ensureCheckoutPrice } from "../utils/productPricing.js";
 
 const getClientUrl = () => {
   const clientUrl = process.env.CLIENT_URL?.trim().replace(/\/$/, "");
@@ -38,7 +40,7 @@ const getOrderCurrency = (order) => {
 
 const createOrderLineItems = (order, currency) => {
   const lineItems = order.items.map((item) => {
-    const unitAmount = Math.round(Number(item.numericPrice) * 100);
+    const unitAmount = Math.round(Number(item.priceAmount ?? item.numericPrice) * 100);
     if (!Number.isSafeInteger(unitAmount) || unitAmount <= 0) {
       throw new Error(`A valid payment price is required for ${item.name}.`);
     }
@@ -48,7 +50,14 @@ const createOrderLineItems = (order, currency) => {
     return {
       price_data: {
         currency: currency.toLowerCase(),
-        product_data: { name: item.name, ...(images && { images }) },
+        product_data: {
+          name: item.name,
+          description: [
+            item.selectedColour ? `Colour: ${item.selectedColour}` : null,
+            item.selectedSize ? `Size: ${item.selectedSize}` : null,
+          ].filter(Boolean).join(" | ") || undefined,
+          ...(images && { images }),
+        },
         unit_amount: unitAmount,
       },
       quantity: item.quantity,
@@ -75,6 +84,36 @@ const createOrderLineItems = (order, currency) => {
 const parseQuoteAmount = (value) => {
   const amount = Number(String(value || "").replace(/,/g, "").replace(/[^0-9.]/g, ""));
   return Number.isFinite(amount) ? amount : 0;
+};
+
+const validateOrderProductsForPayment = async (order) => {
+  const products = await Product.find({
+    _id: { $in: order.items.map((item) => item.product) },
+    isActive: true,
+  });
+  const productsById = new Map(products.map((product) => [product._id.toString(), product]));
+  if (products.length !== new Set(order.items.map((item) => item.product.toString())).size) {
+    throw new Error("One or more products are no longer available. Please contact Nebeda Threads.");
+  }
+
+  for (const item of order.items) {
+    const product = productsById.get(item.product.toString());
+    const pricing = await ensureCheckoutPrice(product);
+    if (pricing.isQuoteOnly || !pricing.amount) {
+      throw new Error("Product price is not configured. Please contact Nebeda Threads.");
+    }
+    if (product.trackInventory && product.inventory < item.quantity) {
+      throw new Error(`${product.name} is no longer available in the requested quantity.`);
+    }
+    const variation = product.variations?.find((entry) =>
+      entry.isActive !== false &&
+      (!entry.size || entry.size === item.selectedSize) &&
+      (!entry.color || entry.color === item.selectedColour)
+    );
+    if (variation && Number.isFinite(variation.stock) && variation.stock < item.quantity) {
+      throw new Error(`The selected ${product.name} variation is out of stock.`);
+    }
+  }
 };
 
 const createCheckoutSession = asyncHandler(async (req, res) => {
@@ -105,6 +144,8 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("This order does not contain any items.");
   }
+
+  await validateOrderProductsForPayment(order);
 
   const stripe = getStripeClient();
   const reusableSession = await getReusableSession(stripe, order);
@@ -233,6 +274,40 @@ const createCustomOrderCheckoutSession = asyncHandler(async (req, res) => {
   res.json({ success: true, checkoutUrl: session.url });
 });
 
+const adjustPaidOrderInventory = async (orderId) => {
+  const databaseSession = await mongoose.startSession();
+  try {
+    await databaseSession.withTransaction(async () => {
+      const order = await Order.findOne({
+        _id: orderId,
+        inventoryAdjusted: { $ne: true },
+      }).session(databaseSession);
+      if (!order) return;
+
+      for (const item of order.items) {
+        const product = await Product.findById(item.product).session(databaseSession);
+        if (!product?.trackInventory) continue;
+        product.inventory = Math.max(0, product.inventory - item.quantity);
+
+        const variation = product.variations?.find(
+          (entry) =>
+            (!entry.size || entry.size === item.selectedSize) &&
+            (!entry.color || entry.color === item.selectedColour),
+        );
+        if (variation && Number.isFinite(variation.stock)) {
+          variation.stock = Math.max(0, variation.stock - item.quantity);
+        }
+        await product.save({ session: databaseSession });
+      }
+
+      order.inventoryAdjusted = true;
+      await order.save({ session: databaseSession });
+    });
+  } finally {
+    await databaseSession.endSession();
+  }
+};
+
 const handleCompletedOrderCheckout = async (session) => {
   const orderId = session.metadata?.orderId;
   if (!mongoose.Types.ObjectId.isValid(orderId) || session.payment_status !== "paid") return;
@@ -255,7 +330,12 @@ const handleCompletedOrderCheckout = async (session) => {
     },
     { new: true },
   );
-  if (!order) return;
+  if (!order) {
+    const paidOrder = await Order.findOne({ _id: orderId, paymentStatus: "Paid", isArchived: false });
+    if (paidOrder && !paidOrder.inventoryAdjusted) await adjustPaidOrderInventory(paidOrder._id);
+    return;
+  }
+  await adjustPaidOrderInventory(order._id);
   await Promise.all([
     sendEmailSafely(paymentConfirmationEmail(order)),
     sendEmailSafely(paidOrderNotificationEmail(order)),

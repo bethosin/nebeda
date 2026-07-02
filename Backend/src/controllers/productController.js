@@ -10,6 +10,7 @@ import Product, {
 } from "../models/Product.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadToCloudinary from "../utils/uploadToCloudinary.js";
+import { ensureCheckoutPrice, normalizeProductPricing } from "../utils/productPricing.js";
 
 const requiredProductFields = [
   "name",
@@ -18,7 +19,6 @@ const requiredProductFields = [
   "categories",
   "displayCategory",
   "gender",
-  "price",
   "currency",
   "badge",
   "stockType",
@@ -33,6 +33,9 @@ const writableProductFields = [
   "displayCategory",
   "gender",
   "price",
+  "priceAmount",
+  "displayPrice",
+  "isQuoteOnly",
   "numericPrice",
   "currency",
   "badge",
@@ -40,6 +43,8 @@ const writableProductFields = [
   "isFeatured",
   "isActive",
   "inventory",
+  "trackInventory",
+  "variations",
   "sizes",
   "colors",
   "fabric",
@@ -51,8 +56,8 @@ const allowedSorts = new Set([
   "-createdAt",
   "name",
   "-name",
-  "numericPrice",
-  "-numericPrice",
+  "priceAmount",
+  "-priceAmount",
   "isFeatured",
   "-isFeatured",
 ]);
@@ -143,12 +148,16 @@ const normalizeProductPayload = (body) => {
     payload.categories = parseArrayField(body.categories);
   }
 
-  if (Object.hasOwn(body, "sizes")) {
-    payload.sizes = parseArrayField(body.sizes);
+  if (Object.hasOwn(body, "colors")) {
+    payload.colors = [...new Set(parseArrayField(body.colors).map((item) => String(item).trim()).filter(Boolean))];
   }
 
-  if (Object.hasOwn(body, "colors")) {
-    payload.colors = parseArrayField(body.colors);
+  if (Object.hasOwn(body, "sizes")) {
+    payload.sizes = [...new Set(parseArrayField(body.sizes).map((item) => String(item).trim()).filter(Boolean))];
+  }
+
+  if (Object.hasOwn(body, "variations")) {
+    payload.variations = parseArrayField(body.variations);
   }
 
   if (Object.hasOwn(body, "isFeatured")) {
@@ -159,12 +168,22 @@ const normalizeProductPayload = (body) => {
     payload.isActive = parseBooleanField(body.isActive);
   }
 
+  if (Object.hasOwn(body, "isQuoteOnly")) {
+    payload.isQuoteOnly = parseBooleanField(body.isQuoteOnly);
+  }
+
+  if (Object.hasOwn(body, "trackInventory")) {
+    payload.trackInventory = parseBooleanField(body.trackInventory);
+  }
+
   if (Object.hasOwn(body, "inventory")) {
     payload.inventory = parseNumberField(body.inventory);
   }
 
-  if (Object.hasOwn(body, "numericPrice")) {
-    payload.numericPrice = parseNumberField(body.numericPrice);
+  if (Object.hasOwn(body, "priceAmount")) {
+    payload.priceAmount = parseNumberField(body.priceAmount);
+  } else if (Object.hasOwn(body, "numericPrice")) {
+    payload.priceAmount = parseNumberField(body.numericPrice);
   }
 
   if (!payload.description && payload.shortDescription) {
@@ -227,11 +246,23 @@ const validateProductPayload = (payload, { partial = false } = {}) => {
     return { stockType: `${payload.stockType} is not a valid stock type` };
   }
 
-  if (
-    payload.numericPrice !== undefined &&
-    (typeof payload.numericPrice !== "number" || payload.numericPrice < 0)
-  ) {
-    return { numericPrice: "numericPrice must be a positive number" };
+  if (payload.isQuoteOnly !== true) {
+    if (typeof payload.priceAmount !== "number" || !Number.isFinite(payload.priceAmount) || payload.priceAmount <= 0) {
+      return { priceAmount: "A valid numeric price is required for products sold online" };
+    }
+  }
+
+  if (payload.variations !== undefined && !Array.isArray(payload.variations)) {
+    return { variations: "variations must be an array" };
+  }
+
+  if (Array.isArray(payload.variations)) {
+    const invalidVariation = payload.variations.find((variation) =>
+      (variation.size && !payload.sizes?.includes(variation.size)) ||
+      (variation.color && !payload.colors?.includes(variation.color)) ||
+      (variation.stock !== undefined && (!Number.isFinite(Number(variation.stock)) || Number(variation.stock) < 0))
+    );
+    if (invalidVariation) return { variations: "A variation contains an invalid size, colour, or stock value" };
   }
 
   if (
@@ -242,6 +273,11 @@ const validateProductPayload = (payload, { partial = false } = {}) => {
   }
 
   return null;
+};
+
+const normalizeProductForResponse = (product) => {
+  normalizeProductPricing(product);
+  return product;
 };
 
 const uploadProductImagesToCloudinary = async (files = [], productName) => {
@@ -263,6 +299,7 @@ const uploadProductImagesToCloudinary = async (files = [], productName) => {
 const createProduct = asyncHandler(async (req, res) => {
   const payload = normalizeProductPayload(req.body);
   payload.careInstructions ||= "";
+  normalizeProductPricing(payload);
   const validationError = validateProductPayload(payload);
 
   if (validationError) {
@@ -298,7 +335,7 @@ const createProduct = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: "Product created successfully",
-    product,
+    product: normalizeProductForResponse(product),
   });
 });
 
@@ -341,8 +378,9 @@ const getProducts = asyncHandler(async (req, res) => {
   const products = await Product.find(query)
     .sort(getSafeSort(sort))
     .skip(skip)
-    .limit(limitNumber)
-    .lean();
+    .limit(limitNumber);
+
+  await Promise.all(products.map((product) => ensureCheckoutPrice(product)));
 
   res.json({
     success: true,
@@ -350,7 +388,7 @@ const getProducts = asyncHandler(async (req, res) => {
     page: pageNumber,
     pages: Math.ceil(total / limitNumber) || 1,
     total,
-    products,
+    products: products.map(normalizeProductForResponse),
   });
 });
 
@@ -360,16 +398,18 @@ const getProductById = asyncHandler(async (req, res) => {
     throw new Error("Invalid product id");
   }
 
-  const product = await Product.findOne({ _id: req.params.id, isActive: true }).lean();
+  const product = await Product.findOne({ _id: req.params.id, isActive: true });
 
   if (!product) {
     res.status(404);
     throw new Error("Product not found");
   }
 
+  await ensureCheckoutPrice(product);
+
   res.json({
     success: true,
-    product,
+    product: normalizeProductForResponse(product),
   });
 });
 
@@ -377,16 +417,18 @@ const getProductBySlug = asyncHandler(async (req, res) => {
   const product = await Product.findOne({
     slug: req.params.slug.toLowerCase(),
     isActive: true,
-  }).lean();
+  });
 
   if (!product) {
     res.status(404);
     throw new Error("Product not found");
   }
 
+  await ensureCheckoutPrice(product);
+
   res.json({
     success: true,
-    product,
+    product: normalizeProductForResponse(product),
   });
 });
 
@@ -396,16 +438,18 @@ const adminGetProductById = asyncHandler(async (req, res) => {
     throw new Error("Invalid product id");
   }
 
-  const product = await Product.findById(req.params.id).lean();
+  const product = await Product.findById(req.params.id);
 
   if (!product) {
     res.status(404);
     throw new Error("Product not found");
   }
 
+  await ensureCheckoutPrice(product);
+
   res.json({
     success: true,
-    product,
+    product: normalizeProductForResponse(product),
   });
 });
 
@@ -423,7 +467,18 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 
   const payload = normalizeProductPayload(req.body);
-  const validationError = validateProductPayload(payload, { partial: true });
+  const prospectiveProduct = {
+    ...product.toObject(),
+    ...payload,
+  };
+  normalizeProductPricing(prospectiveProduct);
+  payload.priceAmount = prospectiveProduct.priceAmount;
+  payload.numericPrice = prospectiveProduct.numericPrice;
+  payload.currency = prospectiveProduct.currency;
+  payload.displayPrice = prospectiveProduct.displayPrice;
+  payload.price = prospectiveProduct.price;
+  payload.isQuoteOnly = prospectiveProduct.isQuoteOnly;
+  const validationError = validateProductPayload(prospectiveProduct);
 
   if (validationError) {
     res.status(400);
@@ -466,7 +521,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Product updated successfully",
-    product,
+    product: normalizeProductForResponse(product),
   });
 });
 
@@ -490,7 +545,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Product archived successfully",
-    product,
+    product: normalizeProductForResponse(product),
   });
 });
 
@@ -514,7 +569,7 @@ const restoreProduct = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Product restored successfully",
-    product,
+    product: normalizeProductForResponse(product),
   });
 });
 
@@ -609,7 +664,7 @@ const deleteProductImage = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Product image deleted successfully",
-    product,
+    product: normalizeProductForResponse(product),
   });
 });
 
@@ -638,8 +693,9 @@ const adminGetProducts = asyncHandler(async (req, res) => {
   const products = await Product.find(query)
     .sort(getSafeSort(sort))
     .skip(skip)
-    .limit(limitNumber)
-    .lean();
+    .limit(limitNumber);
+
+  await Promise.all(products.map((product) => ensureCheckoutPrice(product)));
 
   res.json({
     success: true,
@@ -647,7 +703,7 @@ const adminGetProducts = asyncHandler(async (req, res) => {
     page: pageNumber,
     pages: Math.ceil(total / limitNumber) || 1,
     total,
-    products,
+    products: products.map(normalizeProductForResponse),
   });
 });
 

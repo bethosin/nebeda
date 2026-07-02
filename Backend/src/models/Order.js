@@ -34,6 +34,9 @@ const orderItemSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    priceAmount: { type: Number, min: 0 },
+    selectedSize: { type: String, trim: true },
+    selectedColour: { type: String, trim: true },
     numericPrice: {
       type: Number,
       required: true,
@@ -161,6 +164,7 @@ const orderSchema = new mongoose.Schema(
     stripeSessionId: { type: String, trim: true },
     paymentIntentId: { type: String, trim: true },
     paymentFailureReason: { type: String, trim: true, maxlength: 500 },
+    inventoryAdjusted: { type: Boolean, default: false },
     adminNotes: { type: String, trim: true },
     isArchived: {
       type: Boolean,

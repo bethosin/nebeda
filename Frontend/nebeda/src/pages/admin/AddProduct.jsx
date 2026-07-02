@@ -28,12 +28,12 @@ function AddProduct() {
       return
     }
 
-    if (type === 'checkbox' && name === 'categories') {
+    if (type === 'checkbox' && ['categories', 'sizes', 'colors'].includes(name)) {
       setForm((current) => ({
         ...current,
-        categories: checked
-          ? [...current.categories, value]
-          : current.categories.filter((category) => category !== value),
+        [name]: checked
+          ? [...current[name], value]
+          : current[name].filter((option) => option !== value),
       }))
       return
     }
